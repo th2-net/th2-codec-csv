@@ -17,7 +17,9 @@ package com.exactpro.th2.codec.csv;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -28,6 +30,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.csvreader.CsvReader;
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.MessageBatch;
@@ -63,7 +66,6 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         logger.info("Default header: {}", configuration.getDefaultHeader());
         charset = Charset.forName(configuration.getEncoding());
         decoder = charset.newDecoder();
-        requireNonNull(configuration.getDelimiter(), "Delimiter must be set");
     }
 
     @Override
@@ -75,7 +77,11 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             for (RawMessage rawMessage : message.getMessagesList()) {
                 ByteString body = rawMessage.getBody();
                 RawMessageMetadata originalMetadata = rawMessage.getMetadata();
-                String[] strings = decoder.decode(ByteBuffer.wrap(body.toByteArray())).toString().split(configuration.getDelimiter());
+                String[] strings = decodeValues(body);
+                if (strings.length == 0) {
+                    logger.warn("No values decoded from {}", rawMessage);
+                    continue;
+                }
 
                 trimEachElement(strings);
 
@@ -125,7 +131,19 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             send(batchBuilder.build());
 
         } catch (Exception ex) {
-            logger.error("Cannot process batch: {}", message, ex);
+            logger.error("Cannot process batch for {}: {}", consumerTag, message, ex);
+        }
+    }
+
+    private String[] decodeValues(ByteString body) throws IOException {
+        try(InputStream in = new ByteArrayInputStream(body.toByteArray())) {
+            CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
+            try {
+                reader.readRecord();
+                return reader.getValues();
+            } finally {
+                reader.close();
+            }
         }
     }
 

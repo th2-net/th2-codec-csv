@@ -27,7 +27,7 @@ public class CsvCodecConfiguration {
     private List<String> defaultHeader;
 
     @JsonPropertyDescription("The delimiter to use for splitting input data")
-    private String delimiter = ",";
+    private char delimiter = ',';
 
     @JsonPropertyDescription("Encoding to use during data decoding")
     private String encoding = "UTF-8";
@@ -40,11 +40,11 @@ public class CsvCodecConfiguration {
         this.defaultHeader = defaultHeader;
     }
 
-    public String getDelimiter() {
+    public char getDelimiter() {
         return delimiter;
     }
 
-    public void setDelimiter(String delimiter) {
+    public void setDelimiter(char delimiter) {
         this.delimiter = delimiter;
     }
 

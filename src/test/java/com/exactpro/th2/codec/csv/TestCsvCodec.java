@@ -48,7 +48,7 @@ class TestCsvCodec {
 
     @Test
     void decodesDataAndSkipsHeader() throws IOException {
-        CsvCodec codec = createCodec(new CsvCodecConfiguration());
+        CsvCodec codec = createCodec();
 
         RawMessageBatch batch = RawMessageBatch.newBuilder()
                 .addMessages(
@@ -67,8 +67,8 @@ class TestCsvCodec {
         assertEquals(1, value.getMessagesCount());
 
         Message message = value.getMessages(0);
-        assertEquals(3, message.getFieldsCount());
-        assertAll(
+        assertFieldCount(3, message);
+        assertAll("Current message: " + message,
                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
                 () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
@@ -95,12 +95,107 @@ class TestCsvCodec {
         assertEquals(1, value.getMessagesCount());
 
         Message message = value.getMessages(0);
-        assertEquals(3, message.getFieldsCount());
-        assertAll(
+        assertFieldCount(3, message);
+        assertAll("Current message: " + message,
                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
                 () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
         );
+    }
+
+    @Test
+    void decodesDataWithEscapedCharacters() throws IOException {
+        CsvCodec codec = createCodec();
+
+        RawMessageBatch batch = RawMessageBatch.newBuilder()
+                .addMessages(
+                        createCsvMessage("A,B", true)
+                )
+                .addMessages(
+                        createCsvMessage("\"1,2\",\"\"\"value\"\"\"", false)
+                ).build();
+        codec.handler("", batch);
+
+        var captor = ArgumentCaptor.forClass(MessageBatch.class);
+        verify(routerMock).sendAll(captor.capture(), any());
+
+        MessageBatch value = captor.getValue();
+        assertNotNull(value, "Did not capture any publication");
+        assertEquals(1, value.getMessagesCount());
+
+        Message message = value.getMessages(0);
+        assertFieldCount(2, message);
+        assertAll("Current message: " + message,
+                () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
+                () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
+        );
+    }
+
+    @Test
+    void decodesDataCustomDelimiter() throws IOException {
+        CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+        configuration.setDelimiter(';');
+        CsvCodec codec = createCodec(configuration);
+
+        RawMessageBatch batch = RawMessageBatch.newBuilder()
+                .addMessages(
+                        createCsvMessage("A;B", true)
+                )
+                .addMessages(
+                        createCsvMessage("1,2;3", false)
+                ).build();
+        codec.handler("", batch);
+
+        var captor = ArgumentCaptor.forClass(MessageBatch.class);
+        verify(routerMock).sendAll(captor.capture(), any());
+
+        MessageBatch value = captor.getValue();
+        assertNotNull(value, "Did not capture any publication");
+        assertEquals(1, value.getMessagesCount());
+
+        Message message = value.getMessages(0);
+        assertFieldCount(2, message);
+        assertAll("Current message: " + message,
+                () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
+                () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
+        );
+    }
+
+    @Test
+    void trimsWhitespacesDuringDecoding() throws IOException {
+        CsvCodec codec = createCodec();
+
+        RawMessageBatch batch = RawMessageBatch.newBuilder()
+                .addMessages(
+                        createCsvMessage("A, B, C", true)
+                )
+                .addMessages(
+                        createCsvMessage("1, , 3 3", false)
+                ).build();
+        codec.handler("", batch);
+
+        var captor = ArgumentCaptor.forClass(MessageBatch.class);
+        verify(routerMock).sendAll(captor.capture(), any());
+
+        MessageBatch value = captor.getValue();
+        assertNotNull(value, "Did not capture any publication");
+        assertEquals(1, value.getMessagesCount());
+
+        Message message = value.getMessages(0);
+        assertFieldCount(3, message);
+        assertAll("Current message: " + message,
+                () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
+                () -> assertEquals("3 3", getFieldValue(message, "C", () -> "No field C. " + message))
+        );
+    }
+
+    private void assertFieldCount(int exceptedCount, Message message) {
+        assertEquals(exceptedCount, message.getFieldsCount(), "Message: " + message);
+    }
+
+    private CsvCodec createCodec() {
+        return createCodec(new CsvCodecConfiguration());
     }
 
     private CsvCodec createCodec(CsvCodecConfiguration configuration) {
