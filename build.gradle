@@ -1,16 +1,11 @@
 plugins {
-    id "com.jfrog.artifactory" version '4.15.1' apply false
+    id 'java'
+    id 'application'
+    id 'com.palantir.docker' version '0.25.0'
 }
 
-apply plugin: 'java'
-apply plugin: 'java-library'
-apply plugin: 'maven-publish'
-apply plugin: 'com.jfrog.artifactory'
-
 ext {
-    sharedDir           = file("${project.rootDir}/shared")
-
-    slf4jVersion        = '1.7.30'
+    sharedDir = file("${project.rootDir}/shared")
 }
 
 group = 'com.exactpro.th2'
@@ -26,12 +21,12 @@ repositories {
     }
     mavenCentral()
     maven {
-        name 'Artifactory snapshot'
-        url 'http://artifactory5.exp.exactpro.com/artifactory/libs-snapshot'
+        name 'Bintray'
+        url 'https://dl.bintray.com/exactpro/th2'
     }
     maven {
-        name 'Artifactory release'
-        url 'http://artifactory5.exp.exactpro.com/artifactory/libs-release'
+        name 'Bintray'
+        url 'https://dl.bintray.com/exactpro/sailfish'
     }
     mavenLocal()
 
@@ -56,29 +51,37 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:th2-bom:1.0.4')
+    implementation platform('com.exactpro.th2:bom:2.7.+')
 
-    implementation "com.exactpro.th2:th2-common"
+    implementation "com.exactpro.th2:common"
 
-    compile "org.slf4j:slf4j-log4j12:${slf4jVersion}"
-    compile "org.slf4j:slf4j-api:${slf4jVersion}"
+    implementation "org.slf4j:slf4j-log4j12"
+    implementation "org.slf4j:slf4j-api"
 
-    testImplementation 'junit:junit:4.12'
+    implementation 'net.sourceforge.javacsv:javacsv:2.0'
+
+    testImplementation 'org.mockito:mockito-core:3.5.15'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-            artifactId 'th2-csv-codec'
-        }
-    }
-    repositories {
-        maven {
-            name = 'localRepo'
-            url = sharedDir
-        }
-    }
+test {
+    useJUnitPlatform()
 }
 
+application {
+    mainClassName 'com.exactpro.th2.codec.csv.Main'
+}
 
+applicationName = 'service'
+
+distTar {
+    archiveName "${applicationName}.tar"
+}
+
+dockerPrepare {
+    dependsOn distTar
+}
+
+docker {
+    copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
+}
