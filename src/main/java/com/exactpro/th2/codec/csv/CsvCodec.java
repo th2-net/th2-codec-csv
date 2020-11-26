@@ -20,18 +20,21 @@ import static java.util.Objects.requireNonNull;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.csvreader.CsvReader;
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
+import com.exactpro.th2.common.event.Event;
+import com.exactpro.th2.common.event.Event.Status;
+import com.exactpro.th2.common.event.EventUtils;
+import com.exactpro.th2.common.grpc.EventBatch;
+import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.MessageBatch;
 import com.exactpro.th2.common.grpc.MessageBatch.Builder;
@@ -46,7 +49,7 @@ import com.google.protobuf.ByteString;
 
 public class CsvCodec implements MessageListener<RawMessageBatch> {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass() + "@" + hashCode());
+    private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
     static final String MESSAGE_TYPE_PROPERTY = "message.type";
     static final String HEADER_TYPE = "header";
 
@@ -54,23 +57,26 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
     private final Charset charset;
-    private final CharsetDecoder decoder;
+    private final MessageRouter<EventBatch> eventRouter;
+    private final EventID rootId;
 
-    public CsvCodec(MessageRouter<MessageBatch> router, CsvCodecConfiguration configuration) {
+    public CsvCodec(MessageRouter<MessageBatch> router, MessageRouter<EventBatch> eventRouter, EventID rootId, CsvCodecConfiguration configuration) {
         this.router = requireNonNull(router, "'Router' parameter");
+        this.eventRouter = requireNonNull(eventRouter, "'Event router' parameter");
         this.configuration = requireNonNull(configuration, "'Configuration' parameter");
+        this.rootId = requireNonNull(rootId, "'Root id' parameter");
         List<String> defaultHeader = configuration.getDefaultHeader();
         this.defaultHeader = defaultHeader == null
                 ? null
                 : defaultHeader.stream().map(String::trim).toArray(String[]::new);
-        logger.info("Default header: {}", configuration.getDefaultHeader());
+        LOGGER.info("Default header: {}", configuration.getDefaultHeader());
         charset = Charset.forName(configuration.getEncoding());
-        decoder = charset.newDecoder();
     }
 
     @Override
     public void handler(String consumerTag, RawMessageBatch message) {
         try {
+            List<ErrorHolder> errors = new ArrayList<>();
             Builder batchBuilder = MessageBatch.newBuilder();
 
             String[] header = null;
@@ -79,35 +85,39 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
                 RawMessageMetadata originalMetadata = rawMessage.getMetadata();
                 String[] strings = decodeValues(body);
                 if (strings.length == 0) {
-                    logger.warn("No values decoded from {}", rawMessage);
+                    LOGGER.warn("No values decoded from {}", rawMessage);
                     continue;
                 }
 
                 trimEachElement(strings);
 
                 if (HEADER_TYPE.equals(originalMetadata.getPropertiesMap().get(MESSAGE_TYPE_PROPERTY))) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Set header to: " + Arrays.toString(strings));
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug("Set header to: " + Arrays.toString(strings));
                     }
                     header = strings;
                     continue;
                 }
                 if (header == null && defaultHeader != null) {
-                    logger.info("Use default header for decoding");
+                    LOGGER.info("Use default header for decoding");
                     header = defaultHeader;
                 }
 
                 if (header == null) {
-                    logger.warn("Neither default header or message with {}={} were found. Skip current string", MESSAGE_TYPE_PROPERTY, HEADER_TYPE);
+                    String msg = "Neither default header or message with " + MESSAGE_TYPE_PROPERTY + "=" + HEADER_TYPE + " were found. Skip current string";
+                    LOGGER.error(msg);
+                    errors.add(new ErrorHolder(msg, strings, rawMessage));
                     continue;
                 }
 
                 if (strings.length != header.length) {
-                    logger.warn("Wrong fields count in message. Expected count: {}; actual: {}; session alias: {}",
+                    String msg = String.format("Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
                             header.length, strings.length, originalMetadata.getId().getConnectionId().getSessionAlias());
-                    if (logger.isDebugEnabled()) {
-                        logger.debug(rawMessage.toString());
+                    LOGGER.error(msg);
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(rawMessage.toString());
                     }
+                    errors.add(new ErrorHolder(msg, strings, rawMessage));
                 }
 
                 Message.Builder messageBuilder = batchBuilder.addMessagesBuilder();
@@ -129,14 +139,17 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             }
 
             send(batchBuilder.build());
+            if (!errors.isEmpty()) {
+                reportErrors(errors);
+            }
 
         } catch (Exception ex) {
-            logger.error("Cannot process batch for {}: {}", consumerTag, message, ex);
+            LOGGER.error("Cannot process batch for {}: {}", consumerTag, message, ex);
         }
     }
 
     private String[] decodeValues(ByteString body) throws IOException {
-        try(InputStream in = new ByteArrayInputStream(body.toByteArray())) {
+        try (InputStream in = new ByteArrayInputStream(body.toByteArray())) {
             CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
             try {
                 reader.readRecord();
@@ -147,7 +160,45 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         }
     }
 
+    private static class ErrorHolder {
+        public final String text;
+        public final String[] currentRow;
+        public final RawMessage originalMessage;
+
+        private ErrorHolder(String text, String[] currentRow, RawMessage originalMessage) {
+            this.text = text;
+            this.currentRow = currentRow;
+            this.originalMessage = originalMessage;
+        }
+    }
+
+    private void reportErrors(List<ErrorHolder> errors) {
+        try {
+            EventBatch.Builder errorBatch = EventBatch.newBuilder();
+            for (ErrorHolder error : errors) {
+                errorBatch.addEvents(
+                        Event.start()
+                                .endTimestamp()
+                                .type("DecodingError")
+                                .name("Error during decoding data")
+                                .status(Status.FAILED)
+                                .bodyData(EventUtils.createMessageBean(error.text))
+                                .bodyData(EventUtils.createMessageBean("Current data: " + Arrays.toString(error.currentRow)))
+                                .messageID(error.originalMessage.getMetadata().getId())
+                                .toProtoEvent(rootId.getId())
+                );
+            }
+
+            eventRouter.send(errorBatch.build());
+        } catch (Exception ex) {
+            LOGGER.error("Cannot send error to the event store", ex);
+        }
+    }
+
     private void send(MessageBatch batch) throws IOException {
+        if (batch.getMessagesList().isEmpty()) {
+            return;
+        }
         router.sendAll(batch);
     }
 

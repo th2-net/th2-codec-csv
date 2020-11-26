@@ -19,12 +19,16 @@ Csv codec has following parameters:
 default-header: [A, B, C]
 delimiter: ','
 encoding: UTF-8
+display-name: CodecCsv
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
 **delimiter** - the delimiter to split values in received data. The default value is `,`.
 
 **encoding** - the encoding for the received data. The default value is `UTF-8`.
+
+**display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
+The default value for the name is `CodecCsv`.
 
 ## Pins
 

@@ -29,11 +29,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
+import com.exactpro.th2.common.event.Event;
+import com.exactpro.th2.common.event.EventUtils;
+import com.exactpro.th2.common.grpc.EventBatch;
 import com.exactpro.th2.common.grpc.MessageBatch;
 import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.common.schema.message.SubscriberMonitor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 public class Main {
 
@@ -52,8 +56,11 @@ public class Main {
             var configuration = factory.getCustomConfiguration(CsvCodecConfiguration.class);
             MessageRouter<MessageBatch> parsedRouter = factory.getMessageRouterParsedBatch();
             MessageRouter<RawMessageBatch> rawRouter = factory.getMessageRouterRawBatch();
+            MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
+            var rootEvent = createRootEvent(configuration);
+            eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent).build());
 
-            var codec = new CsvCodec(parsedRouter, configuration);
+            var codec = new CsvCodec(parsedRouter, eventBatchRouter, rootEvent.getId(), configuration);
             SubscriberMonitor monitor = Objects.requireNonNull(rawRouter.subscribeAll(codec), "Cannot subscribe to raw queues");
             resources.add(monitor::unsubscribe);
 
@@ -99,5 +106,14 @@ public class Main {
         });
         setLiveness(false);
         LOGGER.info("Shutdown end");
+    }
+
+    private static com.exactpro.th2.common.grpc.Event createRootEvent(CsvCodecConfiguration cfg) throws JsonProcessingException {
+        String displayName = Objects.requireNonNull(cfg.getDisplayName(), "Display name should not be null");
+        return Event.start()
+                .type("CodecCsv")
+                .name(displayName + "_" + System.currentTimeMillis())
+                .bodyData(EventUtils.createMessageBean("Root event for CSV coded. All errors during decoding will be attached here"))
+                .toProtoEvent(null);
     }
 }

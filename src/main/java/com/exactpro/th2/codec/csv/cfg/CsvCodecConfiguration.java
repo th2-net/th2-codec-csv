@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.csv.cfg;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,7 +31,11 @@ public class CsvCodecConfiguration {
     private char delimiter = ',';
 
     @JsonPropertyDescription("Encoding to use during data decoding")
-    private String encoding = "UTF-8";
+    private String encoding = StandardCharsets.UTF_8.name();
+
+    @JsonProperty("display-name")
+    @JsonPropertyDescription("Display name for the root event sent to the event store")
+    private String displayName = "CodecCsv";
 
     public List<String> getDefaultHeader() {
         return defaultHeader;
@@ -54,5 +59,13 @@ public class CsvCodecConfiguration {
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
     }
 }
