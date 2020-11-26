@@ -1,93 +1,87 @@
 plugins {
-    id "com.jfrog.artifactory" version '4.15.1' apply false
-}
-
-allprojects {
-    apply plugin: 'java'
-    apply plugin: 'maven-publish'
-    apply plugin: 'com.jfrog.artifactory'
-
-    ext {
-        sharedDir           = file("${project.rootDir}/shared")
-    }
-
-    group = 'com.exactpro.th2'
-    version = "${version_major}.${version_minor}-SNAPSHOT"
-
-    sourceCompatibility = 1.11
-    targetCompatibility = 1.11
-
-    repositories {
-        maven {
-            name 'MavenLocal'
-            url sharedDir
-        }
-        mavenCentral()
-        maven {
-            name 'Artifactory snapshot'
-            url 'http://artifactory5.exp.exactpro.com/artifactory/libs-snapshot'
-        }
-        mavenLocal()
-
-        configurations.all {
-            resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-            resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
-        }
-    }
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
-        }
-
-        repositories {
-            maven {
-                name = 'localRepo'
-                url = sharedDir
-            }
-        }
-    }
-
-    artifactory {
-        publish {
-            defaults {
-                // Reference to Gradle publications defined in the build script.
-                // This is how we tell the Artifactory Plugin which artifacts should be
-                // published to Artifactory.
-                publications('mavenJava')
-                publishArtifacts = true
-                publishBuildInfo = true
-                // Properties to be attached to the published artifacts.
-                publishPom = true
-            }
-        }
-    }
+    id 'java'
+    id 'application'
+    id 'com.palantir.docker' version '0.25.0'
 }
 
 ext {
-    slf4jVersion        = '1.7.30'
-
-    sailfishVersion     = '3.2-SNAPSHOT'
-    th2Version          = '1.2-SNAPSHOT'
+    sharedDir = file("${project.rootDir}/shared")
 }
 
-dependencies {
-    compile "com.exactpro.th2:th2-common:${th2Version}"
+group = 'com.exactpro.th2'
+version = release_version
 
-    compile "org.slf4j:slf4j-log4j12:${slf4jVersion}"
-    compile "org.slf4j:slf4j-api:${slf4jVersion}"
+sourceCompatibility = 11
+targetCompatibility = 11
 
-    testImplementation 'junit:junit:4.12'
-}
+repositories {
+    maven {
+        name 'MavenLocal'
+        url sharedDir
+    }
+    mavenCentral()
+    maven {
+        name 'Bintray'
+        url 'https://dl.bintray.com/exactpro/th2'
+    }
+    maven {
+        name 'Bintray'
+        url 'https://dl.bintray.com/exactpro/sailfish'
+    }
+    mavenLocal()
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId 'th2-csv-codec'
-        }
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
     }
 }
 
+jar {
+    manifest {
+        attributes(
+                'Created-By':               "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
+                'Specification-Title':      '',
+                'Specification-Vendor':     'Exactpro Systems LLC',
+                'Implementation-Title':     project.archivesBaseName,
+                'Implementation-Vendor':    'Exactpro Systems LLC',
+                'Implementation-Vendor-Id': 'com.exactpro',
+                'Implementation-Version':   project.version
+        )
+    }
+}
 
+dependencies {
+    implementation platform('com.exactpro.th2:bom:2.7.+')
+
+    implementation "com.exactpro.th2:common"
+
+    implementation "org.slf4j:slf4j-log4j12"
+    implementation "org.slf4j:slf4j-api"
+
+    implementation 'net.sourceforge.javacsv:javacsv:2.0'
+
+    testImplementation 'org.mockito:mockito-core:3.5.15'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+application {
+    mainClassName 'com.exactpro.th2.codec.csv.Main'
+}
+
+applicationName = 'service'
+
+distTar {
+    archiveName "${applicationName}.tar"
+}
+
+dockerPrepare {
+    dependsOn distTar
+}
+
+docker {
+    copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
+}

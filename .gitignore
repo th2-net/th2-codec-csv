@@ -1,0 +1,8 @@
+# Gradle
+.gradle
+build
+shared
+
+# Idea
+.idea
+out/
