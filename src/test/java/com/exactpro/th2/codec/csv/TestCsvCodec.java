@@ -88,6 +88,35 @@ class TestCsvCodec {
         }
 
         @Test
+        void trimsEndOfTheLine() throws IOException {
+            CsvCodec codec = createCodec();
+
+            RawMessageBatch batch = RawMessageBatch.newBuilder()
+                    .addMessages(
+                            createCsvMessage("A,B,C\n\r", true)
+                    )
+                    .addMessages(
+                            createCsvMessage("1,2,3\n", false)
+                    ).build();
+            codec.handler("", batch);
+
+            var captor = ArgumentCaptor.forClass(MessageBatch.class);
+            verify(routerMock).sendAll(captor.capture(), any());
+
+            MessageBatch value = captor.getValue();
+            assertNotNull(value, "Did not capture any publication");
+            assertEquals(1, value.getMessagesCount());
+
+            Message message = value.getMessages(0);
+            assertFieldCount(3, message);
+            assertAll("Current message: " + message,
+                    () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                    () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                    () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+            );
+        }
+
+        @Test
         void decodesDataUsingDefaultHeader() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDefaultHeader(List.of("A", "B", "C"));
@@ -212,8 +241,38 @@ class TestCsvCodec {
                     .addMessages(createCsvMessage("1,2,3",false))
                     .build());
 
-            verify(routerMock, never()).sendAll(any(), any());
-            verify(eventRouterMock).send(any());
+            assertAll(
+                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(eventRouterMock).send(any())
+            );
+        }
+
+        @Test
+        void reportsErrorIfMoreThanOneRowInOneMessage() throws IOException {
+            CsvCodec codec = createCodec();
+            codec.handler("", RawMessageBatch.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C",true))
+                    .addMessages(createCsvMessage("1,2,3\n3,4,5",false))
+                    .build());
+
+            assertAll(
+                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(eventRouterMock).send(any())
+            );
+        }
+
+        @Test
+        void reportsErrorIfRawDataIsEmpty() throws IOException {
+            CsvCodec codec = createCodec();
+            codec.handler("", RawMessageBatch.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C",true))
+                    .addMessages(createCsvMessage("",false))
+                    .build());
+
+            assertAll(
+                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(eventRouterMock).send(any())
+            );
         }
 
         @Test
@@ -226,8 +285,10 @@ class TestCsvCodec {
                     .build());
 
             var captor = ArgumentCaptor.forClass(MessageBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
-            verify(eventRouterMock).send(any());
+            assertAll(
+                    () -> verify(routerMock).sendAll(captor.capture(), any()),
+                    () -> verify(eventRouterMock).send(any())
+            );
 
             var messageBatch = captor.getValue();
             assertNotNull(messageBatch);
@@ -250,9 +311,12 @@ class TestCsvCodec {
                     .addAllMessages(messages)
                     .build());
 
-            verify(routerMock, never()).sendAll(any(), any());
             var captor = ArgumentCaptor.forClass(EventBatch.class);
-            verify(eventRouterMock).send(captor.capture());
+
+            assertAll(
+                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(eventRouterMock).send(captor.capture())
+            );
 
             EventBatch eventBatch = captor.getValue();
             assertNotNull(eventBatch);
@@ -280,14 +344,14 @@ class TestCsvCodec {
     private RawMessage createCsvMessage(String data, boolean isHeader) {
         Builder builder = RawMessage.newBuilder()
                 .setBody(ByteString.copyFrom(data.getBytes(StandardCharsets.UTF_8)));
+        RawMessageMetadata.Builder metadataBuilder = RawMessageMetadata.newBuilder()
+                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build());
         if (isHeader) {
-            builder.setMetadata(
-                    RawMessageMetadata.newBuilder()
-                            .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build())
-                            .putProperties("message.type", "header")
-                            .build()
-            );
+            metadataBuilder
+                    .putProperties("message.type", "header")
+                    .build();
         }
+        builder.setMetadata(metadataBuilder.build());
         return builder.build();
     }
 

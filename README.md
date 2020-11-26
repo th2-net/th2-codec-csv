@@ -10,7 +10,10 @@ That message must have the following property in its metadata:
 message.type=header
 ```
 If batch doesn't have that message the default header from the configuration will be used.
-If no default header is set the batch will be skipped and warning will be reported to the log.
+If no default header is set the batch will be skipped, and an error event will be sent.
+
+Each raw message must contain exactly one row with data.
+If it has more than one row or doesn't have data at all an error event will be sent.
 
 ## Settings
 Csv codec has following parameters:

@@ -83,9 +83,16 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             for (RawMessage rawMessage : message.getMessagesList()) {
                 ByteString body = rawMessage.getBody();
                 RawMessageMetadata originalMetadata = rawMessage.getMetadata();
-                String[] strings = decodeValues(body);
+                Data data = decodeValues(body);
+                if (data.hasMoreValues) {
+                    LOGGER.error("The raw data contains more than one row. Data: {}", rawMessage);
+                    errors.add(new ErrorHolder("The raw data contains more than one row. Should be split to separate messages", data.values, rawMessage));
+                    continue;
+                }
+                String[] strings = data.values;
                 if (strings.length == 0) {
-                    LOGGER.warn("No values decoded from {}", rawMessage);
+                    LOGGER.error("No values decoded from {}", rawMessage);
+                    errors.add(new ErrorHolder("No values decoded from raw data", strings, rawMessage));
                     continue;
                 }
 
@@ -148,15 +155,25 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         }
     }
 
-    private String[] decodeValues(ByteString body) throws IOException {
+    private Data decodeValues(ByteString body) throws IOException {
         try (InputStream in = new ByteArrayInputStream(body.toByteArray())) {
             CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
             try {
                 reader.readRecord();
-                return reader.getValues();
+                return new Data(reader.getValues(), reader.readRecord());
             } finally {
                 reader.close();
             }
+        }
+    }
+
+    private class Data {
+        private final String[] values;
+        private final boolean hasMoreValues;
+
+        private Data(String[] values, boolean hasMoreValues) {
+            this.values = values;
+            this.hasMoreValues = hasMoreValues;
         }
     }
 
