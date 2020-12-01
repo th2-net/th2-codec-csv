@@ -45,7 +45,7 @@ The number of pins with each set of attributes is not limited. **Pins can use fi
 
 ```yaml
 apiVersion: th2.exactpro.com/v1
-kind: Th2GenericBox
+kind: Th2Box
 metadata:
   name: codec-csv
 spec:
