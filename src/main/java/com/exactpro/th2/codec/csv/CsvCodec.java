@@ -191,7 +191,8 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
 
     private void reportErrors(List<ErrorHolder> errors) {
         try {
-            EventBatch.Builder errorBatch = EventBatch.newBuilder();
+            EventBatch.Builder errorBatch = EventBatch.newBuilder()
+                    .setParentEventId(rootId);
             for (ErrorHolder error : errors) {
                 errorBatch.addEvents(
                         Event.start()
