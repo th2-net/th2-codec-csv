@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -39,6 +40,7 @@ import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
 import com.exactpro.th2.common.grpc.Event;
 import com.exactpro.th2.common.grpc.EventBatch;
 import com.exactpro.th2.common.grpc.EventID;
+import com.exactpro.th2.common.grpc.ListValue;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.MessageBatch;
 import com.exactpro.th2.common.grpc.MessageID;
@@ -76,14 +78,23 @@ class TestCsvCodec {
 
             MessageBatch value = captor.getValue();
             assertNotNull(value, "Did not capture any publication");
-            assertEquals(1, value.getMessagesCount());
+            assertEquals(2, value.getMessagesCount());
 
-            Message message = value.getMessages(0);
+            Message header = value.getMessages(0);
+            assertFieldCount(1, header);
+            Message message = value.getMessages(1);
             assertFieldCount(3, message);
-            assertAll("Current message: " + message,
-                    () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
-                    () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
-                    () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
             );
         }
 
@@ -105,14 +116,22 @@ class TestCsvCodec {
 
             MessageBatch value = captor.getValue();
             assertNotNull(value, "Did not capture any publication");
-            assertEquals(1, value.getMessagesCount());
+            assertEquals(2, value.getMessagesCount());
 
-            Message message = value.getMessages(0);
+            Message header = value.getMessages(0);
+            assertFieldCount(1, header);
+            Message message = value.getMessages(1);
             assertFieldCount(3, message);
-            assertAll("Current message: " + message,
-                    () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
-                    () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
-                    () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
             );
         }
 
@@ -162,13 +181,22 @@ class TestCsvCodec {
 
             MessageBatch value = captor.getValue();
             assertNotNull(value, "Did not capture any publication");
-            assertEquals(1, value.getMessagesCount());
+            assertEquals(2, value.getMessagesCount());
 
-            Message message = value.getMessages(0);
+            Message header = value.getMessages(0);
+            assertFieldCount(1, header);
+            Message message = value.getMessages(1);
             assertFieldCount(2, message);
-            assertAll("Current message: " + message,
-                    () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
-                    () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
+
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B"))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
+                    )
             );
         }
 
@@ -192,13 +220,22 @@ class TestCsvCodec {
 
             MessageBatch value = captor.getValue();
             assertNotNull(value, "Did not capture any publication");
-            assertEquals(1, value.getMessagesCount());
+            assertEquals(2, value.getMessagesCount());
 
-            Message message = value.getMessages(0);
+            Message header = value.getMessages(0);
+            assertFieldCount(1, header);
+            Message message = value.getMessages(1);
             assertFieldCount(2, message);
-            assertAll("Current message: " + message,
-                    () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
-                    () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
+
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B"))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
+                    )
             );
         }
 
@@ -220,14 +257,23 @@ class TestCsvCodec {
 
             MessageBatch value = captor.getValue();
             assertNotNull(value, "Did not capture any publication");
-            assertEquals(1, value.getMessagesCount());
+            assertEquals(2, value.getMessagesCount());
 
-            Message message = value.getMessages(0);
+            Message header = value.getMessages(0);
+            assertFieldCount(1, header);
+            Message message = value.getMessages(1);
             assertFieldCount(3, message);
-            assertAll("Current message: " + message,
-                    () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
-                    () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
-                    () -> assertEquals("3 3", getFieldValue(message, "C", () -> "No field C. " + message))
+
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3 3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
             );
         }
     }
@@ -256,7 +302,10 @@ class TestCsvCodec {
                     .build());
 
             assertAll(
-                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(routerMock).sendAll(
+                            argThat(batch -> batch.getMessagesCount() == 1
+                                    && "CsvHeader".equals(batch.getMessages(0).getMetadata().getMessageType())),
+                            any()),
                     () -> verify(eventRouterMock).send(any())
             );
         }
@@ -270,7 +319,10 @@ class TestCsvCodec {
                     .build());
 
             assertAll(
-                    () -> verify(routerMock, never()).sendAll(any(), any()),
+                    () -> verify(routerMock).sendAll(
+                            argThat(batch -> batch.getMessagesCount() == 1
+                                    && "CsvHeader".equals(batch.getMessages(0).getMetadata().getMessageType())),
+                            any()),
                     () -> verify(eventRouterMock).send(any())
             );
         }
@@ -363,5 +415,21 @@ class TestCsvCodec {
         Value value = message.getFieldsMap().get(fieldName);
         assertNotNull(value, assertMessage);
         return value.getSimpleValue();
+    }
+
+    private void assertFieldValueEquals(Message message, String fieldName, Value expectedValue) {
+        Value actualValue = message.getFieldsMap().get(fieldName);
+        assertEquals(expectedValue, actualValue, () -> "Unexpected value in " + fieldName + " field. Message: " + message);
+    }
+
+    private static Value listValue(String... values) {
+        ListValue.Builder listValue = ListValue.newBuilder();
+        for (String value : values) {
+            listValue.addValues(Value.newBuilder().setSimpleValue(value).build());
+        }
+
+        return Value.newBuilder()
+                .setListValue(listValue)
+                .build();
     }
 }
