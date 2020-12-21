@@ -42,14 +42,17 @@ import com.exactpro.th2.common.grpc.MessageMetadata;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
-import com.exactpro.th2.common.grpc.Value;
 import com.exactpro.th2.common.schema.message.MessageListener;
 import com.exactpro.th2.common.schema.message.MessageRouter;
+import com.exactpro.th2.common.value.ValueUtilsKt;
 import com.google.protobuf.ByteString;
 
 public class CsvCodec implements MessageListener<RawMessageBatch> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
+    private static final String HEADER_MSG_TYPE = "Csv_Header";
+    private static final String CSV_MESSAGE_TYPE = "Csv_Message";
+    private static final String HEADER_FIELD_NAME = "Header";
     static final String MESSAGE_TYPE_PROPERTY = "message.type";
     static final String HEADER_TYPE = "header";
 
@@ -103,6 +106,9 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
                         LOGGER.debug("Set header to: " + Arrays.toString(strings));
                     }
                     header = strings;
+                    Message.Builder headerMsg = batchBuilder.addMessagesBuilder();
+                    setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE);
+                    headerMsg.putFields(HEADER_FIELD_NAME, ValueUtilsKt.toValue(strings));
                     continue;
                 }
                 if (header == null && defaultHeader != null) {
@@ -130,18 +136,12 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
                 Message.Builder messageBuilder = batchBuilder.addMessagesBuilder();
 
                 // Not set message type
-                messageBuilder.setMetadata(MessageMetadata
-                        .newBuilder()
-                        .setId(originalMetadata.getId())
-                        .setTimestamp(originalMetadata.getTimestamp())
-                        .putAllProperties(originalMetadata.getPropertiesMap())
-                        .setMessageType("Csv_Message")
-                );
+                setMetadata(originalMetadata, messageBuilder, CSV_MESSAGE_TYPE);
 
                 int headerLength = header.length;
                 int rowLength = strings.length;
                 for (int i = 0; i < headerLength && i < rowLength; i++) {
-                    messageBuilder.putFields(header[i], Value.newBuilder().setSimpleValue(strings[i]).build());
+                    messageBuilder.putFields(header[i], ValueUtilsKt.toValue(strings[i]));
                 }
             }
 
@@ -153,6 +153,16 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         } catch (Exception ex) {
             LOGGER.error("Cannot process batch for {}: {}", consumerTag, message, ex);
         }
+    }
+
+    private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType) {
+        messageBuilder.setMetadata(MessageMetadata
+                .newBuilder()
+                .setId(originalMetadata.getId())
+                .setTimestamp(originalMetadata.getTimestamp())
+                .putAllProperties(originalMetadata.getPropertiesMap())
+                .setMessageType(messageType)
+        );
     }
 
     private Data decodeValues(ByteString body) throws IOException {
@@ -167,7 +177,7 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         }
     }
 
-    private class Data {
+    private static class Data {
         private final String[] values;
         private final boolean hasMoreValues;
 
