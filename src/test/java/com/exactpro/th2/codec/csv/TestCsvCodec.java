@@ -87,7 +87,7 @@ class TestCsvCodec {
 
             assertAll(
                     () -> assertAll("Current message: " + header,
-                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
                     ),
                     () -> assertAll("Current message: " + message,
@@ -124,7 +124,7 @@ class TestCsvCodec {
             assertFieldCount(3, message);
             assertAll(
                     () -> assertAll("Current message: " + header,
-                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
                     ),
                     () -> assertAll("Current message: " + message,
@@ -190,7 +190,7 @@ class TestCsvCodec {
 
             assertAll(
                     () -> assertAll("Current message: " + header,
-                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B"))
                     ),
                     () -> assertAll("Current message: " + message,
@@ -229,7 +229,7 @@ class TestCsvCodec {
 
             assertAll(
                     () -> assertAll("Current message: " + header,
-                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B"))
                     ),
                     () -> assertAll("Current message: " + message,
@@ -266,7 +266,7 @@ class TestCsvCodec {
 
             assertAll(
                     () -> assertAll("Current message: " + header,
-                            () -> assertEquals("CsvHeader", header.getMetadata().getMessageType()),
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
                     ),
                     () -> assertAll("Current message: " + message,
@@ -304,7 +304,7 @@ class TestCsvCodec {
             assertAll(
                     () -> verify(routerMock).sendAll(
                             argThat(batch -> batch.getMessagesCount() == 1
-                                    && "CsvHeader".equals(batch.getMessages(0).getMetadata().getMessageType())),
+                                    && "Csv_Header".equals(batch.getMessages(0).getMetadata().getMessageType())),
                             any()),
                     () -> verify(eventRouterMock).send(any())
             );
@@ -321,7 +321,7 @@ class TestCsvCodec {
             assertAll(
                     () -> verify(routerMock).sendAll(
                             argThat(batch -> batch.getMessagesCount() == 1
-                                    && "CsvHeader".equals(batch.getMessages(0).getMetadata().getMessageType())),
+                                    && "Csv_Header".equals(batch.getMessages(0).getMetadata().getMessageType())),
                             any()),
                     () -> verify(eventRouterMock).send(any())
             );
