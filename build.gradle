@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'application'
     id 'com.palantir.docker' version '0.25.0'
 }
@@ -51,9 +51,9 @@ jar {
 }
 
 dependencies {
-    implementation platform('com.exactpro.th2:bom:2.7.+')
+    api platform('com.exactpro.th2:bom:2.10.1')
 
-    implementation "com.exactpro.th2:common"
+    implementation 'com.exactpro.th2:common:2.9.0'
 
     implementation "org.slf4j:slf4j-log4j12"
     implementation "org.slf4j:slf4j-api"

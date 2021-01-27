@@ -4,7 +4,7 @@ COPY ./ .
 RUN gradle build dockerPrepare \
     -Prelease_version=${release_version}
 
-FROM openjdk:12-alpine
+FROM adoptopenjdk/openjdk11:alpine
 WORKDIR /home
 COPY --from=build /home/gradle/build/docker ./
 ENTRYPOINT ["/home/service/bin/service"]
