@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +78,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         this.defaultHeader = defaultHeader == null
                 ? null
                 : defaultHeader.stream().map(String::trim).toArray(String[]::new);
-        if (this.defaultHeader != null && this.defaultHeader.length == 0) {
+        if (ArrayUtils.isEmpty(this.defaultHeader)) {
             throw new IllegalArgumentException("Default header must not be empty");
         }
         LOGGER.info("Default header: {}", configuration.getDefaultHeader());
@@ -95,6 +96,10 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
                 for (AnyMessage anyMessage : originalGroup.getMessagesList()) {
                     if (anyMessage.hasMessage()) {
                         groupBuilder.addMessages(anyMessage);
+                        continue;
+                    }
+                    if (!anyMessage.hasRawMessage()) {
+                        LOGGER.error("Message should either have a raw or parsed message but has nothing: {}", anyMessage);
                         continue;
                     }
                     RawMessage rawMessage = anyMessage.getRawMessage();
