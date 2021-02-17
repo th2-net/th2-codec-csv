@@ -32,8 +32,8 @@ The default value for the name is `CodecCsv`.
 ## Pins
 
 The CSV codec requires at leas one pin with the following attributes:
-1. `subscribe` - to receive raw data.
-2. `publish` - to send decoded data.
+1. `decode_in` and `subscribe` - to receive raw data.
+2. `decode_out` and `publish` - to send decoded data.
 
 The number of pins with each set of attributes is not limited. **Pins can use filters**.
 
@@ -53,8 +53,8 @@ spec:
     # decoder
     - name: in_codec_decode
       connection-type: mq
-      attributes: ['subscribe']
+      attributes: ['decode_in', 'subscribe']
     - name: out_codec_decode
       connection-type: mq
-      attributes: ['publish']
+      attributes: ['decode_out', 'publish']
 ```

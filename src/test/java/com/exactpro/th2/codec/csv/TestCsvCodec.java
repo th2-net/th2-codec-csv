@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -74,7 +75,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -119,7 +120,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -167,7 +168,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -201,7 +202,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -249,7 +250,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -295,7 +296,7 @@ class TestCsvCodec {
             codec.handler("", batch);
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), any());
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
 
             MessageGroupBatch actualBatch = captor.getValue();
             assertNotNull(actualBatch, "Did not capture any publication");
@@ -341,7 +342,7 @@ class TestCsvCodec {
                     ).build());
 
             assertAll(
-                    () -> verify(routerMock).sendAll(argThat(it -> it.getGroupsCount() == 1 && it.getGroups(0).getMessagesCount() == 0 ), any()),
+                    () -> verify(routerMock).sendAll(argThat(it -> it.getGroupsCount() == 1 && it.getGroups(0).getMessagesCount() == 0 ), eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
                     () -> verify(eventRouterMock).send(any())
             );
         }
@@ -359,7 +360,7 @@ class TestCsvCodec {
                     () -> verify(routerMock).sendAll(
                             argThat(batch -> batch.getGroupsCount() == 1
                                     && "Csv_Header".equals(getMessage(batch.getGroups(0), 0).getMetadata().getMessageType())),
-                            any()),
+                            eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
                     () -> verify(eventRouterMock).send(any())
             );
         }
@@ -376,7 +377,7 @@ class TestCsvCodec {
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
             assertAll(
-                    () -> verify(routerMock).sendAll(captor.capture(), any()),
+                    () -> verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
                     () -> verify(eventRouterMock).send(any())
             );
 

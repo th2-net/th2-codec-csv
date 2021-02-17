@@ -55,11 +55,11 @@ import com.google.protobuf.TextFormat;
 public class CsvCodec implements MessageListener<MessageGroupBatch> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
+    static final String DECODE_IN_ATTRIBUTE = "decode_in";
+    static final String DECODE_OUT_ATTRIBUTE = "decode_out";
     private static final String HEADER_MSG_TYPE = "Csv_Header";
     private static final String CSV_MESSAGE_TYPE = "Csv_Message";
     private static final String HEADER_FIELD_NAME = "Header";
-    static final String MESSAGE_TYPE_PROPERTY = "message.type";
-    static final String HEADER_TYPE = "header";
 
     private final MessageRouter<MessageGroupBatch> router;
     private final CsvCodecConfiguration configuration;
@@ -249,7 +249,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         if (batch.getGroupsList().isEmpty()) {
             return;
         }
-        router.sendAll(batch);
+        router.sendAll(batch, DECODE_OUT_ATTRIBUTE);
     }
 
     private void trimEachElement(String[] elements) {

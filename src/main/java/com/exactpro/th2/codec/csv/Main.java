@@ -61,7 +61,7 @@ public class Main {
             eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent).build());
 
             var codec = new CsvCodec(messageGroupRouter, eventBatchRouter, rootEvent.getId(), configuration);
-            SubscriberMonitor monitor = Objects.requireNonNull(messageGroupRouter.subscribeAll(codec), "Cannot subscribe to raw queues");
+            SubscriberMonitor monitor = Objects.requireNonNull(messageGroupRouter.subscribeAll(codec, CsvCodec.DECODE_IN_ATTRIBUTE), "Cannot subscribe to raw queues");
             resources.add(monitor::unsubscribe);
 
             setReadiness(true);
