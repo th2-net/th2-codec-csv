@@ -2,18 +2,14 @@
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 
-## Expected batch format
+## Decoding
 
-The codec expects that the first message in the batch to decode will be a CSV header.
-That message must have the following property in its metadata:
-```properties
-message.type=header
-```
-If batch doesn't have that message the default header from the configuration will be used.
-If no default header is set the batch will be skipped, and an error event will be sent.
+The codec decodes each raw message in the received batch.
+Each raw message might contains several line in CSV format.
+If the default header parameter is not set the codec trites the first line from the raw message as a header.
+Otherwise, the default header will be used for decoding the rest of data.
 
-Each raw message must contain exactly one row with data.
-If it has more than one row or doesn't have data at all an error event will be sent.
+If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
 ## Settings
 Csv codec has following parameters:
@@ -36,8 +32,8 @@ The default value for the name is `CodecCsv`.
 ## Pins
 
 The CSV codec requires at leas one pin with the following attributes:
-1. `raw` and `subscribe` - to receive raw data.
-2. `parsed` and `publish` - to send decoded data.
+1. `decode_in` and `subscribe` - to receive raw data.
+2. `decode_out` and `publish` - to send decoded data.
 
 The number of pins with each set of attributes is not limited. **Pins can use filters**.
 
@@ -57,8 +53,8 @@ spec:
     # decoder
     - name: in_codec_decode
       connection-type: mq
-      attributes: ['raw', 'subscribe']
+      attributes: ['decode_in', 'subscribe']
     - name: out_codec_decode
       connection-type: mq
-      attributes: ['parsed', 'publish']
+      attributes: ['decode_out', 'publish']
 ```
