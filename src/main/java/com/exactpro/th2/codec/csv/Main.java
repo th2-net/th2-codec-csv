@@ -33,6 +33,7 @@ import com.exactpro.th2.common.event.Event;
 import com.exactpro.th2.common.event.EventUtils;
 import com.exactpro.th2.common.grpc.EventBatch;
 import com.exactpro.th2.common.grpc.MessageBatch;
+import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
@@ -54,14 +55,13 @@ public class Main {
             setLiveness(true);
 
             var configuration = factory.getCustomConfiguration(CsvCodecConfiguration.class);
-            MessageRouter<MessageBatch> parsedRouter = factory.getMessageRouterParsedBatch();
-            MessageRouter<RawMessageBatch> rawRouter = factory.getMessageRouterRawBatch();
+            MessageRouter<MessageGroupBatch> messageGroupRouter = factory.getMessageRouterMessageGroupBatch();
             MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
             var rootEvent = createRootEvent(configuration);
             eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent).build());
 
-            var codec = new CsvCodec(parsedRouter, eventBatchRouter, rootEvent.getId(), configuration);
-            SubscriberMonitor monitor = Objects.requireNonNull(rawRouter.subscribeAll(codec), "Cannot subscribe to raw queues");
+            var codec = new CsvCodec(messageGroupRouter, eventBatchRouter, rootEvent.getId(), configuration);
+            SubscriberMonitor monitor = Objects.requireNonNull(messageGroupRouter.subscribeAll(codec), "Cannot subscribe to raw queues");
             resources.add(monitor::unsubscribe);
 
             setReadiness(true);

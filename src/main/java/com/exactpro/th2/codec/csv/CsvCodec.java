@@ -23,6 +23,8 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -33,21 +35,24 @@ import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
 import com.exactpro.th2.common.event.Event;
 import com.exactpro.th2.common.event.Event.Status;
 import com.exactpro.th2.common.event.EventUtils;
+import com.exactpro.th2.common.grpc.AnyMessage;
 import com.exactpro.th2.common.grpc.EventBatch;
 import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.MessageBatch;
-import com.exactpro.th2.common.grpc.MessageBatch.Builder;
+import com.exactpro.th2.common.grpc.Message.Builder;
+import com.exactpro.th2.common.grpc.MessageGroup;
+import com.exactpro.th2.common.grpc.MessageGroupBatch;
+import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.MessageMetadata;
 import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.schema.message.MessageListener;
 import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.common.value.ValueUtilsKt;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.TextFormat;
 
-public class CsvCodec implements MessageListener<RawMessageBatch> {
+public class CsvCodec implements MessageListener<MessageGroupBatch> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
     private static final String HEADER_MSG_TYPE = "Csv_Header";
@@ -56,14 +61,14 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
     static final String MESSAGE_TYPE_PROPERTY = "message.type";
     static final String HEADER_TYPE = "header";
 
-    private final MessageRouter<MessageBatch> router;
+    private final MessageRouter<MessageGroupBatch> router;
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
     private final Charset charset;
     private final MessageRouter<EventBatch> eventRouter;
     private final EventID rootId;
 
-    public CsvCodec(MessageRouter<MessageBatch> router, MessageRouter<EventBatch> eventRouter, EventID rootId, CsvCodecConfiguration configuration) {
+    public CsvCodec(MessageRouter<MessageGroupBatch> router, MessageRouter<EventBatch> eventRouter, EventID rootId, CsvCodecConfiguration configuration) {
         this.router = requireNonNull(router, "'Router' parameter");
         this.eventRouter = requireNonNull(eventRouter, "'Event router' parameter");
         this.configuration = requireNonNull(configuration, "'Configuration' parameter");
@@ -72,76 +77,37 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         this.defaultHeader = defaultHeader == null
                 ? null
                 : defaultHeader.stream().map(String::trim).toArray(String[]::new);
+        if (this.defaultHeader != null && this.defaultHeader.length == 0) {
+            throw new IllegalArgumentException("Default header must not be empty");
+        }
         LOGGER.info("Default header: {}", configuration.getDefaultHeader());
         charset = Charset.forName(configuration.getEncoding());
     }
 
     @Override
-    public void handler(String consumerTag, RawMessageBatch message) {
+    public void handler(String consumerTag, MessageGroupBatch message) {
         try {
             List<ErrorHolder> errors = new ArrayList<>();
-            Builder batchBuilder = MessageBatch.newBuilder();
+            MessageGroupBatch.Builder batchBuilder = MessageGroupBatch.newBuilder();
 
-            String[] header = null;
-            for (RawMessage rawMessage : message.getMessagesList()) {
-                ByteString body = rawMessage.getBody();
-                RawMessageMetadata originalMetadata = rawMessage.getMetadata();
-                Data data = decodeValues(body);
-                if (data.hasMoreValues) {
-                    LOGGER.error("The raw data contains more than one row. Data: {}", rawMessage);
-                    errors.add(new ErrorHolder("The raw data contains more than one row. Should be split to separate messages", data.values, rawMessage));
-                    continue;
-                }
-                String[] strings = data.values;
-                if (strings.length == 0) {
-                    LOGGER.error("No values decoded from {}", rawMessage);
-                    errors.add(new ErrorHolder("No values decoded from raw data", strings, rawMessage));
-                    continue;
-                }
-
-                trimEachElement(strings);
-
-                if (HEADER_TYPE.equals(originalMetadata.getPropertiesMap().get(MESSAGE_TYPE_PROPERTY))) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("Set header to: " + Arrays.toString(strings));
+            for (MessageGroup originalGroup : message.getGroupsList()) {
+                MessageGroup.Builder groupBuilder = batchBuilder.addGroupsBuilder();
+                for (AnyMessage anyMessage : originalGroup.getMessagesList()) {
+                    if (anyMessage.hasMessage()) {
+                        groupBuilder.addMessages(anyMessage);
+                        continue;
                     }
-                    header = strings;
-                    Message.Builder headerMsg = batchBuilder.addMessagesBuilder();
-                    setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE);
-                    headerMsg.putFields(HEADER_FIELD_NAME, ValueUtilsKt.toValue(strings));
-                    continue;
-                }
-                if (header == null && defaultHeader != null) {
-                    LOGGER.info("Use default header for decoding");
-                    header = defaultHeader;
-                }
-
-                if (header == null) {
-                    String msg = "Neither default header or message with " + MESSAGE_TYPE_PROPERTY + "=" + HEADER_TYPE + " were found. Skip current string";
-                    LOGGER.error(msg);
-                    errors.add(new ErrorHolder(msg, strings, rawMessage));
-                    continue;
-                }
-
-                if (strings.length != header.length) {
-                    String msg = String.format("Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
-                            header.length, strings.length, originalMetadata.getId().getConnectionId().getSessionAlias());
-                    LOGGER.error(msg);
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(rawMessage.toString());
+                    RawMessage rawMessage = anyMessage.getRawMessage();
+                    ByteString body = rawMessage.getBody();
+                    List<String[]> data = decodeValues(body);
+                    if (data.isEmpty()) {
+                        if (LOGGER.isErrorEnabled()) {
+                            LOGGER.error("The raw message does not contains any data: {}", TextFormat.shortDebugString(rawMessage));
+                        }
+                        errors.add(new ErrorHolder("The raw message does not contains any data", rawMessage));
+                        continue;
                     }
-                    errors.add(new ErrorHolder(msg, strings, rawMessage));
-                }
-
-                Message.Builder messageBuilder = batchBuilder.addMessagesBuilder();
-
-                // Not set message type
-                setMetadata(originalMetadata, messageBuilder, CSV_MESSAGE_TYPE);
-
-                int headerLength = header.length;
-                int rowLength = strings.length;
-                for (int i = 0; i < headerLength && i < rowLength; i++) {
-                    messageBuilder.putFields(header[i], ValueUtilsKt.toValue(strings[i]));
+                    decodeCsvData(errors, groupBuilder, rawMessage, data);
                 }
             }
 
@@ -155,35 +121,87 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         }
     }
 
-    private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType) {
+    private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
+        RawMessageMetadata originalMetadata = rawMessage.getMetadata();
+
+        int currentIndex = 0;
+        String[] header = defaultHeader;
+        for (String[] strings : data) {
+            currentIndex++;
+
+            if (strings.length == 0) {
+                if (LOGGER.isErrorEnabled()) {
+                    LOGGER.error("Empty raw at {} index (starts with 1). Data: {}", currentIndex, data);
+                }
+                errors.add(new ErrorHolder("Empty raw at " + currentIndex + " index (starts with 1)", rawMessage));
+                continue;
+            }
+
+            trimEachElement(strings);
+
+            if (header == null) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug("Set header to: " + Arrays.toString(strings));
+                }
+                header = strings;
+                AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
+                Builder headerMsg = Message.newBuilder();
+                // Not set message type
+                setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
+                headerMsg.putFields(HEADER_FIELD_NAME, ValueUtilsKt.toValue(strings));
+                messageBuilder.setMessage(headerMsg);
+                continue;
+            }
+
+            if (strings.length != header.length) {
+                String msg = String.format("Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
+                        header.length, strings.length, originalMetadata.getId().getConnectionId().getSessionAlias());
+                LOGGER.error(msg);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(rawMessage.toString());
+                }
+                errors.add(new ErrorHolder(msg, strings, rawMessage));
+            }
+
+            AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
+
+            Builder builder = Message.newBuilder();
+            // Not set message type
+            setMetadata(originalMetadata, builder, CSV_MESSAGE_TYPE, currentIndex);
+
+            int headerLength = header.length;
+            int rowLength = strings.length;
+            for (int i = 0; i < headerLength && i < rowLength; i++) {
+                builder.putFields(header[i], ValueUtilsKt.toValue(strings[i]));
+            }
+            messageBuilder.setMessage(builder);
+        }
+    }
+
+    private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType, int currentIndex) {
         messageBuilder.setMetadata(MessageMetadata
                 .newBuilder()
-                .setId(originalMetadata.getId())
+                .setId(MessageID.newBuilder(originalMetadata.getId())
+                        .addSubsequence(currentIndex)
+                        .build())
                 .setTimestamp(originalMetadata.getTimestamp())
                 .putAllProperties(originalMetadata.getPropertiesMap())
                 .setMessageType(messageType)
         );
     }
 
-    private Data decodeValues(ByteString body) throws IOException {
+    private List<String[]> decodeValues(ByteString body) throws IOException {
         try (InputStream in = new ByteArrayInputStream(body.toByteArray())) {
             CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
             try {
-                reader.readRecord();
-                return new Data(reader.getValues(), reader.readRecord());
+                List<String[]> result = new ArrayList<>();
+                while (reader.readRecord()) {
+                    result.add(reader.getValues());
+                }
+                return result;
             } finally {
                 reader.close();
             }
-        }
-    }
-
-    private static class Data {
-        private final String[] values;
-        private final boolean hasMoreValues;
-
-        private Data(String[] values, boolean hasMoreValues) {
-            this.values = values;
-            this.hasMoreValues = hasMoreValues;
         }
     }
 
@@ -197,6 +215,10 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             this.currentRow = currentRow;
             this.originalMessage = originalMessage;
         }
+
+        private ErrorHolder(String text, RawMessage originalMessage) {
+            this(text, null, originalMessage);
+        }
     }
 
     private void reportErrors(List<ErrorHolder> errors) {
@@ -204,17 +226,17 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
             EventBatch.Builder errorBatch = EventBatch.newBuilder()
                     .setParentEventId(rootId);
             for (ErrorHolder error : errors) {
-                errorBatch.addEvents(
-                        Event.start()
-                                .endTimestamp()
-                                .type("DecodingError")
-                                .name("Error during decoding data")
-                                .status(Status.FAILED)
-                                .bodyData(EventUtils.createMessageBean(error.text))
-                                .bodyData(EventUtils.createMessageBean("Current data: " + Arrays.toString(error.currentRow)))
-                                .messageID(error.originalMessage.getMetadata().getId())
-                                .toProtoEvent(rootId.getId())
-                );
+                Event event = Event.start()
+                        .endTimestamp()
+                        .type("DecodingError")
+                        .name("Error during decoding data")
+                        .status(Status.FAILED)
+                        .messageID(error.originalMessage.getMetadata().getId())
+                        .bodyData(EventUtils.createMessageBean(error.text));
+                if (error.currentRow != null) {
+                        event.bodyData(EventUtils.createMessageBean("Current data: " + Arrays.toString(error.currentRow)));
+                }
+                errorBatch.addEvents(event.toProtoEvent(rootId.getId()));
             }
 
             eventRouter.send(errorBatch.build());
@@ -223,8 +245,8 @@ public class CsvCodec implements MessageListener<RawMessageBatch> {
         }
     }
 
-    private void send(MessageBatch batch) throws IOException {
-        if (batch.getMessagesList().isEmpty()) {
+    private void send(MessageGroupBatch batch) throws IOException {
+        if (batch.getGroupsList().isEmpty()) {
             return;
         }
         router.sendAll(batch);
