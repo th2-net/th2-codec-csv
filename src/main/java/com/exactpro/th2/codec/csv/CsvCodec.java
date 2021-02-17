@@ -78,7 +78,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         this.defaultHeader = defaultHeader == null
                 ? null
                 : defaultHeader.stream().map(String::trim).toArray(String[]::new);
-        if (ArrayUtils.isEmpty(this.defaultHeader)) {
+        if (this.defaultHeader != null && this.defaultHeader.length == 0) {
             throw new IllegalArgumentException("Default header must not be empty");
         }
         LOGGER.info("Default header: {}", configuration.getDefaultHeader());
