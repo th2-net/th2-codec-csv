@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class CsvCodecConfiguration {
     @JsonProperty("default-header")
@@ -28,6 +29,7 @@ public class CsvCodecConfiguration {
     private List<String> defaultHeader;
 
     @JsonPropertyDescription("The delimiter to use for splitting input data")
+    @JsonDeserialize(converter = StringToCharConverter.class)
     private char delimiter = ',';
 
     @JsonPropertyDescription("Encoding to use during data decoding")
