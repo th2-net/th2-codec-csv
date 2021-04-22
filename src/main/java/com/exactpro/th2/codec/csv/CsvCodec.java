@@ -24,10 +24,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,7 @@ import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.schema.message.MessageListener;
 import com.exactpro.th2.common.schema.message.MessageRouter;
-import com.exactpro.th2.common.value.ValueUtilsKt;
+import com.exactpro.th2.common.value.ValueUtils;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
 
@@ -153,7 +151,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
                 Builder headerMsg = Message.newBuilder();
                 // Not set message type
                 setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
-                headerMsg.putFields(HEADER_FIELD_NAME, ValueUtilsKt.toValue(strings));
+                headerMsg.putFields(HEADER_FIELD_NAME, ValueUtils.toValue(strings));
                 messageBuilder.setMessage(headerMsg);
                 continue;
             }
@@ -177,7 +175,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
             int headerLength = header.length;
             int rowLength = strings.length;
             for (int i = 0; i < headerLength && i < rowLength; i++) {
-                builder.putFields(header[i], ValueUtilsKt.toValue(strings[i]));
+                builder.putFields(header[i], ValueUtils.toValue(strings[i]));
             }
             messageBuilder.setMessage(builder);
         }
