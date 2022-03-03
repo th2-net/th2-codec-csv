@@ -53,10 +53,10 @@ spec:
     # decoder
     - name: in_codec_decode
       connection-type: mq
-      attributes: ['decode_in', 'subscribe']
+      attributes: ['decode_in', 'subscribe', 'group']
     - name: out_codec_decode
       connection-type: mq
-      attributes: ['decode_out', 'publish']
+      attributes: ['decode_out', 'publish', 'parsed']
 ```
 
 ## Release notes
