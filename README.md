@@ -1,4 +1,4 @@
-# Csv codec (3.1.0)
+# Csv codec (4.0.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 
@@ -60,6 +60,14 @@ spec:
 ```
 
 ## Release notes
+
+### 4.0.0
+
++ Migration to **books/pages** cradle `4.0.0`
++ common updated from `3.13.1` to `4.0.0`
++ bom updated from `2.10.1` to `3.1.0`
++ bintray switched to **sonatype**
+
 
 ### 3.1.0
 

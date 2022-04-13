@@ -370,10 +370,12 @@ class TestCsvCodec {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDefaultHeader(List.of("A", "B"));
             CsvCodec codec = createCodec(configuration);
-            codec.handler("", MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("1,2,3"))
-                    ).build());
+            codec.handler(
+                    "",
+                    MessageGroupBatch.newBuilder().addGroups(
+                            MessageGroup.newBuilder().addMessages(createCsvMessage("1,2,3"))
+                    ).build()
+            );
 
             var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
             assertAll(
@@ -400,7 +402,7 @@ class TestCsvCodec {
     }
 
     private CsvCodec createCodec(CsvCodecConfiguration configuration) {
-        return new CsvCodec(routerMock, eventRouterMock, EventID.newBuilder().setId("test").build(), configuration);
+        return new CsvCodec(routerMock, eventRouterMock, EventID.newBuilder().setId("test").setBookName("test").build(), configuration);
     }
 
     private AnyMessage createCsvMessage(String... data) {

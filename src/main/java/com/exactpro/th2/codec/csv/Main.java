@@ -32,9 +32,7 @@ import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
 import com.exactpro.th2.common.event.Event;
 import com.exactpro.th2.common.event.EventUtils;
 import com.exactpro.th2.common.grpc.EventBatch;
-import com.exactpro.th2.common.grpc.MessageBatch;
 import com.exactpro.th2.common.grpc.MessageGroupBatch;
-import com.exactpro.th2.common.grpc.RawMessageBatch;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.common.schema.message.SubscriberMonitor;
@@ -51,13 +49,14 @@ public class Main {
         configureShutdownHook(resources, lock, condition);
         try {
             var factory = CommonFactory.createFromArguments(args);
+            var boxBookName = factory.getBoxConfiguration().getBookName();
             resources.add(factory);
             setLiveness(true);
 
             var configuration = factory.getCustomConfiguration(CsvCodecConfiguration.class);
             MessageRouter<MessageGroupBatch> messageGroupRouter = factory.getMessageRouterMessageGroupBatch();
             MessageRouter<EventBatch> eventBatchRouter = factory.getEventBatchRouter();
-            var rootEvent = createRootEvent(configuration);
+            var rootEvent = createRootEvent(configuration, boxBookName);
             eventBatchRouter.send(EventBatch.newBuilder().addEvents(rootEvent).build());
 
             var codec = new CsvCodec(messageGroupRouter, eventBatchRouter, rootEvent.getId(), configuration);
@@ -108,12 +107,12 @@ public class Main {
         LOGGER.info("Shutdown end");
     }
 
-    private static com.exactpro.th2.common.grpc.Event createRootEvent(CsvCodecConfiguration cfg) throws JsonProcessingException {
+    private static com.exactpro.th2.common.grpc.Event createRootEvent(CsvCodecConfiguration cfg, String bookName) throws JsonProcessingException {
         String displayName = Objects.requireNonNull(cfg.getDisplayName(), "Display name should not be null");
         return Event.start()
                 .type("CodecCsv")
                 .name(displayName + "_" + System.currentTimeMillis())
                 .bodyData(EventUtils.createMessageBean("Root event for CSV coded. All errors during decoding will be attached here"))
-                .toProtoEvent(null);
+                .toProto(bookName);
     }
 }

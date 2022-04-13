@@ -72,6 +72,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         this.eventRouter = requireNonNull(eventRouter, "'Event router' parameter");
         this.configuration = requireNonNull(configuration, "'Configuration' parameter");
         this.rootId = requireNonNull(rootId, "'Root id' parameter");
+
         List<String> defaultHeader = configuration.getDefaultHeader();
         this.defaultHeader = defaultHeader == null
                 ? null
@@ -185,9 +186,10 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         messageBuilder.setMetadata(MessageMetadata
                 .newBuilder()
                 .setId(MessageID.newBuilder(originalMetadata.getId())
+                        .setTimestamp(originalMetadata.getId().getTimestamp())
                         .addSubsequence(currentIndex)
                         .build())
-                .setTimestamp(originalMetadata.getTimestamp())
+
                 .putAllProperties(originalMetadata.getPropertiesMap())
                 .setMessageType(messageType)
         );
@@ -239,7 +241,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
                 if (error.currentRow != null) {
                         event.bodyData(EventUtils.createMessageBean("Current data: " + Arrays.toString(error.currentRow)));
                 }
-                errorBatch.addEvents(event.toProtoEvent(rootId.getId()));
+                errorBatch.addEvents(event.toProto(rootId));
             }
 
             eventRouter.send(errorBatch.build());
