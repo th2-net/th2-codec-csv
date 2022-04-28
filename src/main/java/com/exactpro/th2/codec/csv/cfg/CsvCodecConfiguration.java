@@ -39,6 +39,10 @@ public class CsvCodecConfiguration {
     @JsonPropertyDescription("Display name for the root event sent to the event store")
     private String displayName = "CodecCsv";
 
+    @JsonProperty("validate-дength")
+    @JsonPropertyDescription("Set to validate length of columns or not")
+    private Boolean validateLength = true;
+
     public List<String> getDefaultHeader() {
         return defaultHeader;
     }
@@ -69,5 +73,13 @@ public class CsvCodecConfiguration {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public Boolean getValidateLength() {
+        return validateLength;
+    }
+
+    public void setValidateLength(Boolean validateLength) {
+        this.validateLength = validateLength;
     }
 }

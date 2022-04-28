@@ -1,8 +1,24 @@
+buildscript {
+    repositories {
+        maven {
+            name 'Sonatype_snapshots'
+            url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+        }
+    }
+    dependencies {
+        classpath "com.exactpro.th2:box-descriptor-generator:0.1.10"
+    }
+}
+
+
 plugins {
     id 'java-library'
     id 'application'
+    id 'signing'
     id 'com.palantir.docker' version '0.25.0'
 }
+
+apply plugin: 'th2plugin'
 
 ext {
     sharedDir = file("${project.rootDir}/shared")
@@ -21,14 +37,13 @@ repositories {
     }
     mavenCentral()
     maven {
-        name 'Bintray'
-        url 'https://dl.bintray.com/exactpro/th2'
+        name 'Sonatype_snapshots'
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
     }
     maven {
-        name 'Bintray'
-        url 'https://dl.bintray.com/exactpro/sailfish'
+        name 'Sonatype_releases'
+        url 'https://s01.oss.sonatype.org/content/repositories/releases/'
     }
-    mavenLocal()
 
     configurations.all {
         resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
@@ -51,9 +66,9 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:2.10.1')
+    api platform('com.exactpro.th2:bom:3.1.0')
 
-    implementation 'com.exactpro.th2:common:3.13.1'
+    implementation 'com.exactpro.th2:common:3.37.0'
 
     implementation "org.slf4j:slf4j-log4j12"
     implementation "org.slf4j:slf4j-api"
