@@ -39,7 +39,7 @@ public class CsvCodecConfiguration {
     @JsonPropertyDescription("Display name for the root event sent to the event store")
     private String displayName = "CodecCsv";
 
-    @JsonProperty("validate-дength")
+    @JsonProperty("validate-length")
     @JsonPropertyDescription("Set to validate length of columns or not")
     private Boolean validateLength = true;
 

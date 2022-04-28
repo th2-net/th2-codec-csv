@@ -1,4 +1,4 @@
-# Csv codec (3.1.0)
+# Csv codec (3.2.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 
@@ -19,6 +19,7 @@ default-header: [A, B, C]
 delimiter: ','
 encoding: UTF-8
 display-name: CodecCsv
+validate-length: true
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -28,6 +29,8 @@ display-name: CodecCsv
 
 **display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
 The default value for the name is `CodecCsv`.
+
+**validate-length** - check if csv have different count of values against header's count
 
 ## Pins
 
