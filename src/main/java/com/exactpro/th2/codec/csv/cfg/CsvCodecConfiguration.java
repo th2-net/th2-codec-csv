@@ -19,11 +19,12 @@ package com.exactpro.th2.codec.csv.cfg;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.exactpro.th2.codec.api.IPipelineCodecSettings;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class CsvCodecConfiguration {
+public class CsvCodecConfiguration implements IPipelineCodecSettings {
     @JsonProperty("default-header")
     @JsonPropertyDescription("The default header that will be used for parsing received batch if no header found in the batch")
     private List<String> defaultHeader;
