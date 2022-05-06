@@ -81,7 +81,7 @@ The default value for the name is `CodecCsv`.
 
 ```yaml
 apiVersion: th2.exactpro.com/v1
-kind: Th2GenericBox
+kind: Th2Box
 metadata:
   name: codec-csv
 spec:
