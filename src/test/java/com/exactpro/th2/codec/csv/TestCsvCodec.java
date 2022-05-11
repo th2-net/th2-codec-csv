@@ -66,7 +66,7 @@ class TestCsvCodec {
     class TestPositive {
 
         @Test
-        void decodeArrayWithDifferentLentgth() throws IOException {
+        void decodeArrayWithDifferentLength() throws IOException {
             CsvCodec codec = createCodec();
             MessageGroupBatch batch = MessageGroupBatch.newBuilder()
                     .addGroups(MessageGroup.newBuilder()
