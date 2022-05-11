@@ -4,8 +4,6 @@ plugins {
     id 'com.palantir.docker' version '0.25.0'
 }
 
-apply plugin: 'th2plugin'
-
 ext {
     sharedDir = file("${project.rootDir}/shared")
 }
