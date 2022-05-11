@@ -192,11 +192,10 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
     private int getGetExtraLength(int from, String[] headers, int valueLength) {
         int count = 0;
         for (int i = from + 1; i < headers.length && i < valueLength; i++) {
-            if (headers[i].isEmpty()) {
-                count++;
-            } else {
+            if (!headers[i].isEmpty()) {
                 break;
             }
+            count++;
         }
         return count;
     }

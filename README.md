@@ -11,6 +11,26 @@ Otherwise, the default header will be used for decoding the rest of data.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
+## Example
+
+#### Decode input: 
+```text
+A, B, V,  ,  , G, D
+1, 2, 3, 4, 5, 6, 7
+```
+
+#### Decode output (message with fields):
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": [3, 4, 5],
+  "G": 6,
+  "D": 7
+}
+```
+
 ## Settings
 Csv codec has following parameters:
 

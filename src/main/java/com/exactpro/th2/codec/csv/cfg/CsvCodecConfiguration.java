@@ -41,7 +41,7 @@ public class CsvCodecConfiguration {
 
     @JsonProperty("validate-length")
     @JsonPropertyDescription("Set to validate length of columns or not")
-    private Boolean validateLength = true;
+    private boolean validateLength = true;
 
     public List<String> getDefaultHeader() {
         return defaultHeader;
@@ -75,11 +75,11 @@ public class CsvCodecConfiguration {
         this.displayName = displayName;
     }
 
-    public Boolean getValidateLength() {
+    public boolean getValidateLength() {
         return validateLength;
     }
 
-    public void setValidateLength(Boolean validateLength) {
+    public void setValidateLength(boolean  validateLength) {
         this.validateLength = validateLength;
     }
 }

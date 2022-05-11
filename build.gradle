@@ -1,20 +1,6 @@
-buildscript {
-    repositories {
-        maven {
-            name 'Sonatype_snapshots'
-            url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-        }
-    }
-    dependencies {
-        classpath "com.exactpro.th2:box-descriptor-generator:0.1.10"
-    }
-}
-
-
 plugins {
     id 'java-library'
     id 'application'
-    id 'signing'
     id 'com.palantir.docker' version '0.25.0'
 }
 
