@@ -11,15 +11,36 @@ Otherwise, the default header will be used for decoding the rest of data.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
-## Example
+## Decode Example
 
-#### Decode input: 
+Simple example: 
+
+```text
+A, B, V, G
+1, 2, 3, 4
+```
+
+into
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": 3,
+  "G": 6
+}
+```
+
+***
+
+**Array** example:
+
 ```text
 A, B, V,  ,  , G, D
 1, 2, 3, 4, 5, 6, 7
 ```
 
-#### Decode output (message with fields):
+into
 
 ```json
 {
@@ -87,7 +108,7 @@ spec:
 ### 3.1.0
 
 + new length validation parameter
-+ array support, to specify array need to have empty header for each value
++ array support, to specify array need to have empty header for each value [^array]
 
 ### 3.1.0
 
