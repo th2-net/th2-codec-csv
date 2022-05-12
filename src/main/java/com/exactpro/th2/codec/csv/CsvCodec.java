@@ -156,7 +156,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
                 continue;
             }
 
-            if (strings.length != header.length) {
+            if (strings.length != header.length && configuration.getValidateLength()) {
                 String msg = String.format("Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
                         header.length, strings.length, originalMetadata.getId().getConnectionId().getSessionAlias());
                 LOGGER.error(msg);
@@ -175,10 +175,29 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
             int headerLength = header.length;
             int rowLength = strings.length;
             for (int i = 0; i < headerLength && i < rowLength; i++) {
-                builder.putFields(header[i], ValueUtils.toValue(strings[i]));
+                int extraLength = getGetExtraLength(i, header, rowLength);
+                if (extraLength == 0) {
+                    builder.putFields(header[i], ValueUtils.toValue(strings[i]));
+                } else {
+                    String[] values = new String[extraLength + 1];
+                    System.arraycopy(strings, i, values, 0, extraLength + 1);
+                    builder.putFields(header[i], ValueUtils.toValue(values));
+                    i+=extraLength;
+                }
             }
             messageBuilder.setMessage(builder);
         }
+    }
+
+    private int getGetExtraLength(int from, String[] headers, int valueLength) {
+        int count = 0;
+        for (int i = from + 1; i < headers.length && i < valueLength; i++) {
+            if (!headers[i].isEmpty()) {
+                break;
+            }
+            count++;
+        }
+        return count;
     }
 
     private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType, int currentIndex) {

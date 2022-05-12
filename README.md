@@ -1,4 +1,4 @@
-# Csv codec (3.1.0)
+# Csv codec (3.2.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 
@@ -11,6 +11,47 @@ Otherwise, the default header will be used for decoding the rest of data.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
+## Decode Example
+
+Simple example: 
+
+```text
+A, B, V, G
+1, 2, 3, 4
+```
+
+into
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": 3,
+  "G": 6
+}
+```
+
+***
+
+**Array** example:
+
+```text
+A, B, V,  ,  , G, D
+1, 2, 3, 4, 5, 6, 7
+```
+
+into
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": [3, 4, 5],
+  "G": 6,
+  "D": 7
+}
+```
+
 ## Settings
 Csv codec has following parameters:
 
@@ -19,6 +60,7 @@ default-header: [A, B, C]
 delimiter: ','
 encoding: UTF-8
 display-name: CodecCsv
+validate-length: true
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -28,6 +70,8 @@ display-name: CodecCsv
 
 **display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
 The default value for the name is `CodecCsv`.
+
+**validate-length** - check if csv have different count of values against header's count
 
 ## Pins
 
@@ -60,6 +104,11 @@ spec:
 ```
 
 ## Release notes
+
+### 3.1.0
+
++ new length validation parameter
++ array support, to specify array need to have empty header for each value [^array]
 
 ### 3.1.0
 
