@@ -174,30 +174,37 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
 
             int headerLength = header.length;
             int rowLength = strings.length;
-            for (int i = 0; i < headerLength && i < rowLength; i++) {
-                int extraLength = getGetExtraLength(i, header, rowLength);
-                if (extraLength == 0) {
+            for (int i = 0; i < headerLength && i < rowLength; ) {
+                int extraLength = getHeaderArrayLength(header, i);
+                if (extraLength == 1) {
                     builder.putFields(header[i], ValueUtils.toValue(strings[i]));
+                    i++;
                 } else {
-                    String[] values = new String[extraLength + 1];
-                    System.arraycopy(strings, i, values, 0, extraLength + 1);
+                    String[] values = copyArray(strings, i, i+extraLength);
                     builder.putFields(header[i], ValueUtils.toValue(values));
                     i+=extraLength;
                 }
             }
+
+
             messageBuilder.setMessage(builder);
         }
     }
 
-    private int getGetExtraLength(int from, String[] headers, int valueLength) {
-        int count = 0;
-        for (int i = from + 1; i < headers.length && i < valueLength; i++) {
-            if (!headers[i].isEmpty()) {
-                break;
-            }
-            count++;
+    public static String [] copyArray(String [] original, int from, int to){
+        String [] copyArr = new String[Integer.min(to, original.length) - from];
+        for (int i = from; i < to && i < original.length; i++){
+            copyArr[i-from] = original[i];
         }
-        return count;
+        return copyArr;
+    }
+
+    private int getHeaderArrayLength(String[] header, int index) {
+        int length = 1;
+        for (int i = index + 1; i < header.length && header[i].isEmpty(); i++) {
+            length++;
+        }
+        return length;
     }
 
     private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType, int currentIndex) {

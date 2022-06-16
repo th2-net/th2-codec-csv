@@ -115,7 +115,55 @@ class TestCsvCodec {
         }
 
         @Test
-        void decodeArray() throws IOException {
+        void decodeArrayInEnd() throws IOException {
+            CsvCodec codec = createCodec();
+            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
+                    .addGroups(MessageGroup.newBuilder()
+                            .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
+                    ).build();
+            codec.handler("", batch);
+
+            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
+            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
+
+            MessageGroupBatch actualBatch = captor.getValue();
+            assertNotNull(actualBatch, "Did not capture any publication");
+            assertEquals(1, actualBatch.getGroupsCount());
+            MessageGroup value = actualBatch.getGroups(0);
+            assertEquals(2, value.getMessagesCount());
+
+            Message header = getMessage(value, 0);
+            assertFieldCount(1, header);
+            Message message = getMessage(value, 1);
+            assertFieldCount(3, message);
+
+            assertAll(
+                    () -> assertAll("Current message: " + header,
+                            () -> assertEquals("Csv_Header", header.getMetadata().getMessageType()),
+                            () -> {
+                                assertEquals(1, header.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(1, header.getMetadata().getId().getSubsequence(0));
+                            },
+                            () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C", ""))
+                    ),
+                    () -> assertAll("Current message: " + message,
+                            () -> {
+                                assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                            },
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> {
+                                var listValues = getListValue(message, "C", () -> "No field C. " + message);
+                                assertEquals(1, listValues.length);
+                                assertEquals("3", listValues[0]);
+                            }
+                    )
+            );
+        }
+
+        @Test
+        void decodeArrayInMiddle() throws IOException {
             CsvCodec codec = createCodec();
             MessageGroupBatch batch = MessageGroupBatch.newBuilder()
                     .addGroups(MessageGroup.newBuilder()
