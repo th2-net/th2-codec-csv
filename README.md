@@ -1,4 +1,4 @@
-# Csv codec (3.2.0)
+# Csv codec (3.2.1)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 
@@ -104,6 +104,10 @@ spec:
 ```
 
 ## Release notes
+
+### 3.1.1
+
++ fixed: last array-field as simple value
 
 ### 3.1.0
 
