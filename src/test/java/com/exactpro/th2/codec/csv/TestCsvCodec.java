@@ -51,7 +51,9 @@ class TestCsvCodec {
 
         @Test
 void decodeArrayWithDifferentLength() throws IOException {
-            CsvCodec codec = createCodec();
+            CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+            configuration.setValidateLength(false);
+            CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
                     .build();
@@ -91,7 +93,9 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void decodeArrayInEnd() throws IOException {
-            CsvCodec codec = createCodec();
+            CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+            configuration.setValidateLength(false);
+            CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
                     .build();
