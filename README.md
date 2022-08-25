@@ -105,11 +105,11 @@ spec:
 
 ## Release notes
 
-### 3.1.1
+### 3.2.1
 
 + fixed: last array-field as simple value
 
-### 3.1.0
+### 3.2.0
 
 + new length validation parameter
 + array support, to specify array need to have empty header for each value [^array]
