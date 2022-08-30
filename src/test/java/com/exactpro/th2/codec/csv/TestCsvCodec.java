@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ class TestCsvCodec {
 void decodeArrayWithDifferentLength() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setValidateLength(false);
+            configuration.setPublishHeader(true);
             CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
@@ -95,6 +96,7 @@ void decodeArrayWithDifferentLength() throws IOException {
         void decodeArrayInEnd() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setValidateLength(false);
+            configuration.setPublishHeader(true);
             CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
@@ -176,7 +178,7 @@ void decodeArrayWithDifferentLength() throws IOException {
         void decodesDataAndSkipsHeader() {
             CsvCodec codec = createCodec();
             MessageGroup group = MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B,C", "1,2,3"))
+                    .addMessages(createCsvMessage("A,B,C", "1,2,3"))
                     .build();
 
             MessageGroup value = codec.decode(group);
@@ -196,6 +198,34 @@ void decodeArrayWithDifferentLength() throws IOException {
                             },
                             () -> assertFieldValueEquals(header, "Header", listValue("A", "B", "C"))
                     ),
+                    () -> assertAll("Current message: " + message,
+                            () -> {
+                                assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                            },
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
+            );
+        }
+
+        @Test
+        void skipsHeaderPublishing() {
+            final var config = new CsvCodecConfiguration();
+            config.setPublishHeader(false);
+            CsvCodec codec = createCodec(config);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C", "1,2,3"))
+                    .build();
+
+            MessageGroup value = codec.decode(group);
+            assertEquals(1, value.getMessagesCount());
+
+            Message message = getMessage(value, 0);
+            assertFieldCount(3, message);
+
+            assertAll(
                     () -> assertAll("Current message: " + message,
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
@@ -311,6 +341,7 @@ void decodeArrayWithDifferentLength() throws IOException {
         void decodesDataCustomDelimiter() {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDelimiter(';');
+            configuration.setPublishHeader(true);
             CsvCodec codec = createCodec(configuration);
 
             MessageGroup group = MessageGroup.newBuilder()
@@ -420,7 +451,9 @@ void decodeArrayWithDifferentLength() throws IOException {
     }
 
     private CsvCodec createCodec() {
-        return createCodec(new CsvCodecConfiguration());
+        final var configuration = new CsvCodecConfiguration();
+        configuration.setPublishHeader(true);
+        return createCodec(configuration);
     }
 
     private CsvCodec createCodec(CsvCodecConfiguration configuration) {

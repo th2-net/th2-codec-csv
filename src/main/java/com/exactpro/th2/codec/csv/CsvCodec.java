@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,32 +32,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.csvreader.CsvReader;
-import com.exactpro.th2.codec.CodecException;
 import com.exactpro.th2.codec.DecodeException;
 import com.exactpro.th2.codec.api.IPipelineCodec;
 import com.exactpro.th2.codec.api.IReportingContext;
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
-import com.exactpro.th2.codec.util.MessageUtilKt;
-import com.exactpro.th2.common.event.Event;
-import com.exactpro.th2.common.event.Event.Status;
-import com.exactpro.th2.common.event.EventUtils;
 import com.exactpro.th2.common.grpc.AnyMessage;
-import com.exactpro.th2.common.grpc.EventBatch;
-import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.Message.Builder;
 import com.exactpro.th2.common.grpc.MessageGroup;
-import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.MessageMetadata;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.message.MessageUtils;
-import com.exactpro.th2.common.schema.message.MessageListener;
-import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.exactpro.th2.common.value.ValueUtils;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.TextFormat;
 
 public class CsvCodec implements IPipelineCodec {
 
@@ -168,12 +157,16 @@ public class CsvCodec implements IPipelineCodec {
                     LOGGER.debug("Set header to: " + Arrays.toString(strings));
                 }
                 header = strings;
-                AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
-                Builder headerMsg = Message.newBuilder();
-                // Not set message type
-                setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
-                headerMsg.putFields(HEADER_FIELD_NAME, ValueUtils.toValue(strings));
-                messageBuilder.setMessage(headerMsg);
+
+                if (configuration.isPublishHeader()) {
+                    AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
+                    Builder headerMsg = Message.newBuilder();
+                    // Not set message type
+                    setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
+                    headerMsg.putFields(HEADER_FIELD_NAME, ValueUtils.toValue(strings));
+                    messageBuilder.setMessage(headerMsg);
+                }
+
                 continue;
             }
 
@@ -206,7 +199,6 @@ public class CsvCodec implements IPipelineCodec {
                     i+=extraLength;
                 }
             }
-
 
             messageBuilder.setMessage(builder);
         }
