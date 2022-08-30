@@ -65,6 +65,7 @@ delimiter: ','
 encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
+publish-header: false
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -75,7 +76,9 @@ validate-length: true
 **display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
 The default value for the name is `CodecCsv`.
 
-**validate-length** - check if csv have different count of values against header's count
+**validate-length** - check if csv have different count of values against header's count.
+
+**publish-header** - set to publish decoded header. The default value is `false`.
 
 ## Full configuration example
 
