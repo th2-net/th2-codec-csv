@@ -66,6 +66,7 @@ encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
 publish-header: false
+th2.csv.override_message_type: "message_type_prop_name"
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -79,6 +80,8 @@ The default value for the name is `CodecCsv`.
 **validate-length** - check if csv have different count of values against header's count.
 
 **publish-header** - set to publish decoded header. The default value is `false`.
+
+**th2.csv.override_message_type** - name of property in incoming message containing message type. The default values are `message_type` and `MESSAGE_TYPE`
 
 ## Full configuration example
 

@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
@@ -79,6 +80,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> {
@@ -122,6 +124,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -161,6 +164,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> {
@@ -202,6 +206,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -230,6 +235,48 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                            },
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
+            );
+        }
+
+        @Test
+        void settingMessageTypeFromIncomingMessageDefaultPropName() {
+            settingMessageTypeFromIncomingMessage(null, "MESSAGE_TYPE");
+        }
+
+        @Test
+        void settingMessageTypeFromIncomingMessageConfigPropName() {
+            settingMessageTypeFromIncomingMessage("config_prop_name", "config_prop_name");
+        }
+
+        private void settingMessageTypeFromIncomingMessage(String configPropName, String messagePropName) {
+            final var config = new CsvCodecConfiguration();
+            config.setPublishHeader(false);
+            config.setMessageTypePropertyName(configPropName);
+            CsvCodec codec = createCodec(config);
+            final var csvMessage = createCsvMessage( Map.of(messagePropName, "CSV"), "A,B,C", "1,2,3");
+
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(csvMessage)
+                    .build();
+
+            MessageGroup value = codec.decode(group);
+            assertEquals(1, value.getMessagesCount());
+
+            Message message = getMessage(value, 0);
+            assertFieldCount(3, message);
+
+            assertAll(
+                    () -> assertAll("Current message: " + message,
+                            () -> {
+                                assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("CSV", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -265,6 +312,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -293,6 +341,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                     () -> {
                         assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                         assertEquals(1, message.getMetadata().getId().getSubsequence(0));
+                        assertEquals("Csv_Message", message.getMetadata().getMessageType());
                     },
                     () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                     () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -330,6 +379,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -370,6 +420,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -407,6 +458,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -461,10 +513,15 @@ void decodeArrayWithDifferentLength() throws IOException {
     }
 
     private AnyMessage createCsvMessage(String... data) {
+        return createCsvMessage(Map.of(), data);
+    }
+
+    private AnyMessage createCsvMessage(Map<String, String> metadataProps, String... data) {
         Builder builder = RawMessage.newBuilder()
                 .setBody(ByteString.copyFrom(String.join(StringUtils.LF, data).getBytes(StandardCharsets.UTF_8)));
         RawMessageMetadata.Builder metadataBuilder = RawMessageMetadata.newBuilder()
-                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build());
+                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build())
+                .putAllProperties(metadataProps);
         builder.setMetadata(metadataBuilder.build());
         return AnyMessage.newBuilder().setRawMessage(builder).build();
     }

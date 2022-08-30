@@ -48,6 +48,9 @@ public class CsvCodecConfiguration implements IPipelineCodecSettings {
     @JsonPropertyDescription("Set to enable header publication")
     private boolean publishHeader = false;
 
+    @JsonProperty("th2.csv.override_message_type")
+    private String messageTypePropertyName = null;
+
     public List<String> getDefaultHeader() {
         return defaultHeader;
     }
@@ -94,5 +97,13 @@ public class CsvCodecConfiguration implements IPipelineCodecSettings {
 
     public void setPublishHeader(boolean publishHeader) {
         this.publishHeader = publishHeader;
+    }
+
+    public String getMessageTypePropertyName() {
+        return messageTypePropertyName;
+    }
+
+    public void setMessageTypePropertyName(String messageTypePropertyName) {
+        this.messageTypePropertyName = messageTypePropertyName;
     }
 }

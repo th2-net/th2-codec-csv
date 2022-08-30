@@ -55,6 +55,9 @@ public class CsvCodec implements IPipelineCodec {
     private static final String CSV_MESSAGE_TYPE = "Csv_Message";
     private static final String HEADER_FIELD_NAME = "Header";
 
+    private static final String DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "message_type";
+    private static final String DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE = "MESSAGE_TYPE";
+
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
     private final Charset charset;
@@ -137,6 +140,19 @@ public class CsvCodec implements IPipelineCodec {
     private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
         RawMessageMetadata originalMetadata = rawMessage.getMetadata();
 
+        final String outputMessageType;
+        if (configuration.getMessageTypePropertyName() != null) {
+            outputMessageType = originalMetadata.getPropertiesOrDefault(configuration.getMessageTypePropertyName(), CSV_MESSAGE_TYPE);
+        } else {
+            if (originalMetadata.containsProperties(DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE)) {
+                outputMessageType = originalMetadata.getPropertiesOrThrow(DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE);
+            } else if (originalMetadata.containsProperties(DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE)) {
+                outputMessageType = originalMetadata.getPropertiesOrThrow(DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE);
+            } else {
+                outputMessageType = CSV_MESSAGE_TYPE;
+            }
+        }
+
         int currentIndex = 0;
         String[] header = defaultHeader;
         for (String[] strings : data) {
@@ -184,7 +200,7 @@ public class CsvCodec implements IPipelineCodec {
 
             Builder builder = Message.newBuilder();
             // Not set message type
-            setMetadata(originalMetadata, builder, CSV_MESSAGE_TYPE, currentIndex);
+            setMetadata(originalMetadata, builder, outputMessageType, currentIndex);
 
             int headerLength = header.length;
             int rowLength = strings.length;
