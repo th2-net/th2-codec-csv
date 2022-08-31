@@ -10,6 +10,8 @@ The codec decodes each raw message in the received batch.
 Each raw message might contain several line in CSV format.
 If the default header parameter is not set the codec trites the first line from the raw message as a header.
 Otherwise, the default header will be used for decoding the rest of data.
+Output message type is taken from `th2.csv.override_message_type` property in input message.
+If the property missing, the default value (`Csv_Message`) for output message type is used.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 

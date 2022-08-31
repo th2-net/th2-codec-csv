@@ -55,6 +55,8 @@ public class CsvCodec implements IPipelineCodec {
     private static final String CSV_MESSAGE_TYPE = "Csv_Message";
     private static final String HEADER_FIELD_NAME = "Header";
 
+    private static final String OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "th2.csv.override_message_type";
+
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
     private final Charset charset;
@@ -137,6 +139,8 @@ public class CsvCodec implements IPipelineCodec {
     private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
         RawMessageMetadata originalMetadata = rawMessage.getMetadata();
 
+        final String outputMessageType = originalMetadata.getPropertiesOrDefault(OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE, CSV_MESSAGE_TYPE);
+
         int currentIndex = 0;
         String[] header = defaultHeader;
         for (String[] strings : data) {
@@ -184,7 +188,7 @@ public class CsvCodec implements IPipelineCodec {
 
             Builder builder = Message.newBuilder();
             // Not set message type
-            setMetadata(originalMetadata, builder, CSV_MESSAGE_TYPE, currentIndex);
+            setMetadata(originalMetadata, builder, outputMessageType, currentIndex);
 
             int headerLength = header.length;
             int rowLength = strings.length;
