@@ -55,8 +55,7 @@ public class CsvCodec implements IPipelineCodec {
     private static final String CSV_MESSAGE_TYPE = "Csv_Message";
     private static final String HEADER_FIELD_NAME = "Header";
 
-    private static final String DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "message_type";
-    private static final String DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE = "MESSAGE_TYPE";
+    private static final String OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "th2.csv.override_message_type";
 
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
@@ -140,18 +139,7 @@ public class CsvCodec implements IPipelineCodec {
     private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
         RawMessageMetadata originalMetadata = rawMessage.getMetadata();
 
-        final String outputMessageType;
-        if (configuration.getMessageTypePropertyName() != null) {
-            outputMessageType = originalMetadata.getPropertiesOrDefault(configuration.getMessageTypePropertyName(), CSV_MESSAGE_TYPE);
-        } else {
-            if (originalMetadata.containsProperties(DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE)) {
-                outputMessageType = originalMetadata.getPropertiesOrThrow(DEFAULT_MESSAGE_TYPE_PROP_NAME_LOWERCASE);
-            } else if (originalMetadata.containsProperties(DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE)) {
-                outputMessageType = originalMetadata.getPropertiesOrThrow(DEFAULT_MESSAGE_TYPE_PROP_NAME_UPPERCASE);
-            } else {
-                outputMessageType = CSV_MESSAGE_TYPE;
-            }
-        }
+        final String outputMessageType = originalMetadata.getPropertiesOrDefault(OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE, CSV_MESSAGE_TYPE);
 
         int currentIndex = 0;
         String[] header = defaultHeader;

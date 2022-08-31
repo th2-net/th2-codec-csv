@@ -245,21 +245,13 @@ void decodeArrayWithDifferentLength() throws IOException {
         }
 
         @Test
-        void settingMessageTypeFromIncomingMessageDefaultPropName() {
-            settingMessageTypeFromIncomingMessage(null, "MESSAGE_TYPE");
-        }
+        void settingMessageTypeFromIncomingMessage() {
+            final var CUSTOM_TYPE = "csv_test_type";
 
-        @Test
-        void settingMessageTypeFromIncomingMessageConfigPropName() {
-            settingMessageTypeFromIncomingMessage("config_prop_name", "config_prop_name");
-        }
-
-        private void settingMessageTypeFromIncomingMessage(String configPropName, String messagePropName) {
             final var config = new CsvCodecConfiguration();
             config.setPublishHeader(false);
-            config.setMessageTypePropertyName(configPropName);
             CsvCodec codec = createCodec(config);
-            final var csvMessage = createCsvMessage( Map.of(messagePropName, "CSV"), "A,B,C", "1,2,3");
+            final var csvMessage = createCsvMessage(Map.of("th2.csv.override_message_type", CUSTOM_TYPE), "A,B,C", "1,2,3");
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(csvMessage)
@@ -276,7 +268,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
-                                assertEquals("CSV", message.getMetadata().getMessageType());
+                                assertEquals(CUSTOM_TYPE, message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),

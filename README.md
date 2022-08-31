@@ -10,6 +10,8 @@ The codec decodes each raw message in the received batch.
 Each raw message might contain several line in CSV format.
 If the default header parameter is not set the codec trites the first line from the raw message as a header.
 Otherwise, the default header will be used for decoding the rest of data.
+Output message type is taken from `th2.csv.override_message_type` property in input message.
+If the property missing, the default value (`Csv_Message`) for output message type is used.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
@@ -66,7 +68,6 @@ encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
 publish-header: false
-th2.csv.override_message_type: "message_type_prop_name"
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -80,8 +81,6 @@ The default value for the name is `CodecCsv`.
 **validate-length** - check if csv have different count of values against header's count.
 
 **publish-header** - set to publish decoded header. The default value is `false`.
-
-**th2.csv.override_message_type** - name of property in incoming message containing message type. The default values are `message_type` and `MESSAGE_TYPE`
 
 ## Full configuration example
 
