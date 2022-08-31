@@ -246,12 +246,12 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void settingMessageTypeFromIncomingMessage() {
-            final var CUSTOM_TYPE = "csv_test_type";
+            final var customType = "csv_test_type";
 
             final var config = new CsvCodecConfiguration();
             config.setPublishHeader(false);
             CsvCodec codec = createCodec(config);
-            final var csvMessage = createCsvMessage(Map.of("th2.csv.override_message_type", CUSTOM_TYPE), "A,B,C", "1,2,3");
+            final var csvMessage = createCsvMessage(Map.of("th2.csv.override_message_type", customType), "A,B,C", "1,2,3");
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(csvMessage)
@@ -268,7 +268,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
-                                assertEquals(CUSTOM_TYPE, message.getMetadata().getMessageType());
+                                assertEquals(customType, message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
