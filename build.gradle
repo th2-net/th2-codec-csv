@@ -50,12 +50,11 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:3.1.0')
+    api platform('com.exactpro.th2:bom:4.0.1')
+    implementation 'com.exactpro.th2:common:3.41.0'
 
-    implementation 'com.exactpro.th2:common:3.37.1'
-
-    implementation "org.slf4j:slf4j-log4j12"
-    implementation "org.slf4j:slf4j-api"
+    implementation "org.apache.logging.log4j:log4j-slf4j-impl"
+    implementation "org.apache.logging.log4j:log4j-1.2-api"
 
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
 
