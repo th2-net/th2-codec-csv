@@ -61,7 +61,7 @@ dependencies {
     implementation 'com.exactpro.th2:common:3.41.0'
     implementation 'com.exactpro.th2:codec:4.7.4'
 
-    implementation "org.apache.logging.log4j:log4j-1.2-api"
+    implementation "org.slf4j:slf4j-api"
 
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
     implementation 'org.jetbrains:annotations:23.0.0'
