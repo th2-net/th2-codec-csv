@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'application'
     id 'com.palantir.docker' version '0.25.0'
-    id "org.owasp.dependencycheck" version "7.2.0"
+    id "org.owasp.dependencycheck" version "7.3.0"
 }
 
 dependencyCheck {
@@ -56,12 +56,10 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:4.0.1')
+    api platform('com.exactpro.th2:bom:4.0.2')
 
-    implementation 'com.exactpro.th2:common:3.41.0'
+    implementation 'com.exactpro.th2:common:3.41.1'
     implementation 'com.exactpro.th2:codec:4.7.4'
-
-    implementation "org.slf4j:slf4j-api"
 
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
     implementation 'org.jetbrains:annotations:23.0.0'
