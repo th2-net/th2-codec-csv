@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2022 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,68 +19,47 @@ package com.exactpro.th2.codec.csv;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 
+import com.exactpro.th2.codec.DecodeException;
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
 import com.exactpro.th2.common.grpc.AnyMessage;
-import com.exactpro.th2.common.grpc.Event;
-import com.exactpro.th2.common.grpc.EventBatch;
-import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.ListValue;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.MessageGroup;
-import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessage.Builder;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.grpc.Value;
-import com.exactpro.th2.common.schema.message.MessageRouter;
 import com.google.protobuf.ByteString;
 
 class TestCsvCodec {
-    @SuppressWarnings("unchecked")
-    private final MessageRouter<MessageGroupBatch> routerMock = Mockito.mock(MessageRouter.class);
-    @SuppressWarnings("unchecked")
-    private final MessageRouter<EventBatch> eventRouterMock = Mockito.mock(MessageRouter.class);
-
     @Nested
     class TestPositive {
 
         @Test
-        void decodeArrayWithDifferentLength() throws IOException {
-            CsvCodec codec = createCodec();
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+void decodeArrayWithDifferentLength() throws IOException {
+            CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+            configuration.setValidateLength(false);
+            configuration.setPublishHeader(true);
+            CsvCodec codec = createCodec(configuration);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -101,6 +80,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> {
@@ -116,20 +96,14 @@ class TestCsvCodec {
 
         @Test
         void decodeArrayInEnd() throws IOException {
-            CsvCodec codec = createCodec();
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+            configuration.setValidateLength(false);
+            configuration.setPublishHeader(true);
+            CsvCodec codec = createCodec(configuration);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -150,6 +124,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -165,19 +140,10 @@ class TestCsvCodec {
         @Test
         void decodeArrayInMiddle() throws IOException {
             CsvCodec codec = createCodec();
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B, ,C", "1,2,3,4"))
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B, ,C", "1,2,3,4"))
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -198,6 +164,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> {
@@ -212,21 +179,13 @@ class TestCsvCodec {
         }
 
         @Test
-        void decodesDataAndSkipsHeader() throws IOException {
+        void decodesDataAndSkipsHeader() {
             CsvCodec codec = createCodec();
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B,C", "1,2,3"))
-                    ).build();
-            codec.handler("", batch);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C", "1,2,3"))
+                    .build();
 
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -247,6 +206,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -256,22 +216,75 @@ class TestCsvCodec {
         }
 
         @Test
-        void trimsEndOfTheLine() throws IOException {
+        void skipsHeaderPublishing() {
+            final var config = new CsvCodecConfiguration();
+            config.setPublishHeader(false);
+            CsvCodec codec = createCodec(config);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C", "1,2,3"))
+                    .build();
+
+            MessageGroup value = codec.decode(group);
+            assertEquals(1, value.getMessagesCount());
+
+            Message message = getMessage(value, 0);
+            assertFieldCount(3, message);
+
+            assertAll(
+                    () -> assertAll("Current message: " + message,
+                            () -> {
+                                assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                            },
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
+            );
+        }
+
+        @Test
+        void settingMessageTypeFromIncomingMessage() {
+            final var customType = "csv_test_type";
+
+            final var config = new CsvCodecConfiguration();
+            config.setPublishHeader(false);
+            CsvCodec codec = createCodec(config);
+            final var csvMessage = createCsvMessage(Map.of("th2.csv.override_message_type", customType), "A,B,C", "1,2,3");
+
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(csvMessage)
+                    .build();
+
+            MessageGroup value = codec.decode(group);
+            assertEquals(1, value.getMessagesCount());
+
+            Message message = getMessage(value, 0);
+            assertFieldCount(3, message);
+
+            assertAll(
+                    () -> assertAll("Current message: " + message,
+                            () -> {
+                                assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
+                                assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals(customType, message.getMetadata().getMessageType());
+                            },
+                            () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
+                            () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
+                            () -> assertEquals("3", getFieldValue(message, "C", () -> "No field C. " + message))
+                    )
+            );
+        }
+
+        @Test
+        void trimsEndOfTheLine() {
             CsvCodec codec = createCodec();
 
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B,C\n\r1,2,3\n"))
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(createCsvMessage("A,B,C\n\r1,2,3\n"))
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -291,6 +304,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -300,26 +314,17 @@ class TestCsvCodec {
         }
 
         @Test
-        void decodesDataUsingDefaultHeader() throws IOException {
+        void decodesDataUsingDefaultHeader() {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDefaultHeader(List.of("A", "B", "C"));
             CsvCodec codec = createCodec(configuration);
 
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(
-                                    createCsvMessage("1,2,3")
-                            )
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(
+                            createCsvMessage("1,2,3")
+                    )
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(1, value.getMessagesCount());
 
             Message message = getMessage(value, 0);
@@ -328,6 +333,7 @@ class TestCsvCodec {
                     () -> {
                         assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                         assertEquals(1, message.getMetadata().getId().getSubsequence(0));
+                        assertEquals("Csv_Message", message.getMetadata().getMessageType());
                     },
                     () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                     () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -336,24 +342,15 @@ class TestCsvCodec {
         }
 
         @Test
-        void decodesDataWithEscapedCharacters() throws IOException {
+        void decodesDataWithEscapedCharacters() {
             CsvCodec codec = createCodec();
 
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(
-                                    createCsvMessage("A,B", "\"1,2\",\"\"\"value\"\"\"")
-                            )
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(
+                            createCsvMessage("A,B", "\"1,2\",\"\"\"value\"\"\"")
+                    )
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -374,6 +371,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -382,26 +380,18 @@ class TestCsvCodec {
         }
 
         @Test
-        void decodesDataCustomDelimiter() throws IOException {
+        void decodesDataCustomDelimiter() {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDelimiter(';');
+            configuration.setPublishHeader(true);
             CsvCodec codec = createCodec(configuration);
 
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(
-                                    createCsvMessage("A;B", "1,2;3")
-                            )
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(
+                            createCsvMessage("A;B", "1,2;3")
+                    )
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -422,6 +412,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -430,24 +421,15 @@ class TestCsvCodec {
         }
 
         @Test
-        void trimsWhitespacesDuringDecoding() throws IOException {
+        void trimsWhitespacesDuringDecoding() {
             CsvCodec codec = createCodec();
 
-            MessageGroupBatch batch = MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(
-                                    createCsvMessage("A, B, C", "1, , 3 3")
-                            )
-                    ).build();
-            codec.handler("", batch);
-
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE));
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup value = actualBatch.getGroups(0);
+            MessageGroup group = MessageGroup.newBuilder()
+                    .addMessages(
+                            createCsvMessage("A, B, C", "1, , 3 3")
+                    )
+                    .build();
+            MessageGroup value = codec.decode(group);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -468,6 +450,7 @@ class TestCsvCodec {
                             () -> {
                                 assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                 assertEquals(2, message.getMetadata().getId().getSubsequence(0));
+                                assertEquals("Csv_Message", message.getMetadata().getMessageType());
                             },
                             () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                             () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -480,80 +463,57 @@ class TestCsvCodec {
     @Nested
     class TestNegative {
         @Test
-        void reportsErrorIfNotDataFound() throws IOException {
+        void reportsErrorIfNotDataFound() {
             CsvCodec codec = createCodec();
-            codec.handler("", MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage(""))
-                    ).build());
-
-            assertAll(
-                    () -> verify(routerMock).sendAll(argThat(it -> it.getGroupsCount() == 1 && it.getGroups(0).getMessagesCount() == 0 ), eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
-                    () -> verify(eventRouterMock).send(any())
-            );
+            Assertions.assertThrows(DecodeException.class, () ->
+                    codec.decode(MessageGroup.newBuilder().addMessages(createCsvMessage("")).build()));
         }
 
         @Test
-        void reportsErrorIfRawDataIsEmpty() throws IOException {
+        void reportsErrorIfRawDataIsEmpty() {
             CsvCodec codec = createCodec();
-            codec.handler("", MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
+
+            Assertions.assertThrows(DecodeException.class, () ->
+                    codec.decode(MessageGroup.newBuilder()
                             .addMessages(createCsvMessage("A,B,C"))
                             .addMessages(createCsvMessage(""))
-                    ).build());
-
-            assertAll(
-                    () -> verify(routerMock).sendAll(
-                            argThat(batch -> batch.getGroupsCount() == 1
-                                    && "Csv_Header".equals(getMessage(batch.getGroups(0), 0).getMetadata().getMessageType())),
-                            eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
-                    () -> verify(eventRouterMock).send(any())
+                            .build())
             );
         }
 
         @Test
-        void reportsErrorIfDefaultHeaderAndDataHaveDifferentSize() throws IOException {
+        void reportsErrorIfDefaultHeaderAndDataHaveDifferentSize() {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDefaultHeader(List.of("A", "B"));
             CsvCodec codec = createCodec(configuration);
-            codec.handler("", MessageGroupBatch.newBuilder()
-                    .addGroups(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("1,2,3"))
-                    ).build());
 
-            var captor = ArgumentCaptor.forClass(MessageGroupBatch.class);
-            assertAll(
-                    () -> verify(routerMock).sendAll(captor.capture(), eq(CsvCodec.DECODE_OUT_ATTRIBUTE)),
-                    () -> verify(eventRouterMock).send(any())
-            );
-
-            MessageGroupBatch actualBatch = captor.getValue();
-            assertNotNull(actualBatch, "Did not capture any publication");
-            assertEquals(1, actualBatch.getGroupsCount());
-            MessageGroup messageBatch = actualBatch.getGroups(0);
-            assertEquals(1, messageBatch.getMessagesCount(), () -> "Batch: " + messageBatch);
-            Message message = getMessage(messageBatch, 0);
-            assertFieldCount(2, message);
-            assertAll(
-                    () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A: " + message)),
-                    () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B: " + message))
+            assertThrows(DecodeException.class, () ->
+                    codec.decode(MessageGroup.newBuilder()
+                            .addMessages(createCsvMessage("1,2,3")).build())
             );
         }
     }
 
     private CsvCodec createCodec() {
-        return createCodec(new CsvCodecConfiguration());
+        final var configuration = new CsvCodecConfiguration();
+        configuration.setPublishHeader(true);
+        return createCodec(configuration);
     }
 
     private CsvCodec createCodec(CsvCodecConfiguration configuration) {
-        return new CsvCodec(routerMock, eventRouterMock, EventID.newBuilder().setId("test").build(), configuration);
+        return new CsvCodec(configuration);
     }
 
     private AnyMessage createCsvMessage(String... data) {
+        return createCsvMessage(Map.of(), data);
+    }
+
+    private AnyMessage createCsvMessage(Map<String, String> metadataProps, String... data) {
         Builder builder = RawMessage.newBuilder()
                 .setBody(ByteString.copyFrom(String.join(StringUtils.LF, data).getBytes(StandardCharsets.UTF_8)));
         RawMessageMetadata.Builder metadataBuilder = RawMessageMetadata.newBuilder()
-                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build());
+                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build())
+                .putAllProperties(metadataProps);
         builder.setMetadata(metadataBuilder.build());
         return AnyMessage.newBuilder().setRawMessage(builder).build();
     }
