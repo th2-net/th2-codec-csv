@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,53 +25,44 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.csvreader.CsvReader;
+import com.exactpro.th2.codec.DecodeException;
+import com.exactpro.th2.codec.api.IPipelineCodec;
+import com.exactpro.th2.codec.api.IReportingContext;
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration;
-import com.exactpro.th2.common.event.Event;
-import com.exactpro.th2.common.event.Event.Status;
-import com.exactpro.th2.common.event.EventUtils;
 import com.exactpro.th2.common.grpc.AnyMessage;
-import com.exactpro.th2.common.grpc.EventBatch;
-import com.exactpro.th2.common.grpc.EventID;
 import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.Message.Builder;
 import com.exactpro.th2.common.grpc.MessageGroup;
-import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.MessageMetadata;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.RawMessageMetadata;
-import com.exactpro.th2.common.schema.message.MessageListener;
-import com.exactpro.th2.common.schema.message.MessageRouter;
+import com.exactpro.th2.common.message.MessageUtils;
 import com.exactpro.th2.common.value.ValueUtils;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.TextFormat;
 
-public class CsvCodec implements MessageListener<MessageGroupBatch> {
+public class CsvCodec implements IPipelineCodec {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
-    static final String DECODE_IN_ATTRIBUTE = "decode_in";
-    static final String DECODE_OUT_ATTRIBUTE = "decode_out";
     private static final String HEADER_MSG_TYPE = "Csv_Header";
     private static final String CSV_MESSAGE_TYPE = "Csv_Message";
     private static final String HEADER_FIELD_NAME = "Header";
 
-    private final MessageRouter<MessageGroupBatch> router;
+    private static final String OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "th2.csv.override_message_type";
+
     private final CsvCodecConfiguration configuration;
     private final String[] defaultHeader;
     private final Charset charset;
-    private final MessageRouter<EventBatch> eventRouter;
-    private final EventID rootId;
 
-    public CsvCodec(MessageRouter<MessageGroupBatch> router, MessageRouter<EventBatch> eventRouter, EventID rootId, CsvCodecConfiguration configuration) {
-        this.router = requireNonNull(router, "'Router' parameter");
-        this.eventRouter = requireNonNull(eventRouter, "'Event router' parameter");
+    public CsvCodec(CsvCodecConfiguration configuration) {
         this.configuration = requireNonNull(configuration, "'Configuration' parameter");
-        this.rootId = requireNonNull(rootId, "'Root id' parameter");
 
         List<String> defaultHeader = configuration.getDefaultHeader();
         this.defaultHeader = defaultHeader == null
@@ -84,49 +75,78 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         charset = Charset.forName(configuration.getEncoding());
     }
 
+    @NotNull
     @Override
-    public void handler(String consumerTag, MessageGroupBatch message) {
-        try {
-            List<ErrorHolder> errors = new ArrayList<>();
-            MessageGroupBatch.Builder batchBuilder = MessageGroupBatch.newBuilder();
+    public MessageGroup decode(@NotNull MessageGroup messageGroup) {
+        MessageGroup.Builder groupBuilder = MessageGroup.newBuilder();
+        Collection<ErrorHolder> errors = new ArrayList<>();
+        for (AnyMessage anyMessage : messageGroup.getMessagesList()) {
+            if (anyMessage.hasMessage()) {
+                groupBuilder.addMessages(anyMessage);
+                continue;
+            }
+            if (!anyMessage.hasRawMessage()) {
+                LOGGER.error("Message should either have a raw or parsed message but has nothing: {}", anyMessage);
+                continue;
+            }
+            RawMessage rawMessage = anyMessage.getRawMessage();
+            String protocol = rawMessage.getMetadata().getProtocol();
+            if (!"".equals(protocol) && !"csv".equalsIgnoreCase(protocol)) {
+                LOGGER.error("Wrong protocol: message should have empty or 'csv' protocol but has {}", protocol);
+                continue;
+            }
 
-            for (MessageGroup originalGroup : message.getGroupsList()) {
-                MessageGroup.Builder groupBuilder = batchBuilder.addGroupsBuilder();
-                for (AnyMessage anyMessage : originalGroup.getMessagesList()) {
-                    if (anyMessage.hasMessage()) {
-                        groupBuilder.addMessages(anyMessage);
-                        continue;
-                    }
-                    if (!anyMessage.hasRawMessage()) {
-                        LOGGER.error("Message should either have a raw or parsed message but has nothing: {}", anyMessage);
-                        continue;
-                    }
-                    RawMessage rawMessage = anyMessage.getRawMessage();
-                    ByteString body = rawMessage.getBody();
-                    List<String[]> data = decodeValues(body);
-                    if (data.isEmpty()) {
-                        if (LOGGER.isErrorEnabled()) {
-                            LOGGER.error("The raw message does not contains any data: {}", TextFormat.shortDebugString(rawMessage));
-                        }
-                        errors.add(new ErrorHolder("The raw message does not contains any data", rawMessage));
-                        continue;
-                    }
-                    decodeCsvData(errors, groupBuilder, rawMessage, data);
+            ByteString body = rawMessage.getBody();
+            List<String[]> data = decodeValues(body);
+            if (data.isEmpty()) {
+                if (LOGGER.isErrorEnabled()) {
+                    LOGGER.error("The raw message does not contains any data: {}", MessageUtils.toJson(rawMessage));
                 }
+                errors.add(new ErrorHolder("The raw message does not contains any data", rawMessage));
+                continue;
             }
-
-            send(batchBuilder.build());
-            if (!errors.isEmpty()) {
-                reportErrors(errors);
-            }
-
-        } catch (Exception ex) {
-            LOGGER.error("Cannot process batch for {}: {}", consumerTag, message, ex);
+            decodeCsvData(errors, groupBuilder, rawMessage, data);
         }
+        if (!errors.isEmpty()) {
+            throw createException(errors);
+        }
+        return groupBuilder.build();
+    }
+
+    @NotNull
+    @Override
+    public MessageGroup decode(@NotNull MessageGroup messageGroup, @NotNull IReportingContext iReportingContext) {
+        return decode(messageGroup);
+    }
+
+    private RuntimeException createException(Collection<ErrorHolder> errors) {
+        return new DecodeException(
+                "Cannot decode some messages: " + System.lineSeparator() + errors.stream()
+                        .map(it -> "Message " + MessageUtils.toJson(it.originalMessage.getMetadata().getId()) + " cannot be decoded because " + it.text)
+                        .collect(Collectors.joining(System.lineSeparator()))
+        );
+    }
+
+    @NotNull
+    @Override
+    public MessageGroup encode(@NotNull MessageGroup messageGroup) {
+        throw new UnsupportedOperationException("encode method is not implemented");
+    }
+
+    @NotNull
+    @Override
+    public MessageGroup encode(@NotNull MessageGroup messageGroup, @NotNull IReportingContext iReportingContext) {
+        throw new UnsupportedOperationException("encode method is not implemented");
+    }
+
+    @Override
+    public void close() {
     }
 
     private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
         RawMessageMetadata originalMetadata = rawMessage.getMetadata();
+
+        final String outputMessageType = originalMetadata.getPropertiesOrDefault(OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE, CSV_MESSAGE_TYPE);
 
         int currentIndex = 0;
         String[] header = defaultHeader;
@@ -148,16 +168,20 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
                     LOGGER.debug("Set header to: " + Arrays.toString(strings));
                 }
                 header = strings;
-                AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
-                Builder headerMsg = Message.newBuilder();
-                // Not set message type
-                setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
-                headerMsg.putFields(HEADER_FIELD_NAME, ValueUtils.toValue(strings));
-                messageBuilder.setMessage(headerMsg);
+
+                if (configuration.isPublishHeader()) {
+                    AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
+                    Builder headerMsg = Message.newBuilder();
+                    // Not set message type
+                    setMetadata(originalMetadata, headerMsg, HEADER_MSG_TYPE, currentIndex);
+                    headerMsg.putFields(HEADER_FIELD_NAME, ValueUtils.toValue(strings));
+                    messageBuilder.setMessage(headerMsg);
+                }
+
                 continue;
             }
 
-            if (strings.length != header.length) {
+            if (strings.length != header.length && configuration.getValidateLength()) {
                 String msg = String.format("Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
                         header.length, strings.length, originalMetadata.getId().getConnectionId().getSessionAlias());
                 LOGGER.error(msg);
@@ -171,15 +195,40 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
 
             Builder builder = Message.newBuilder();
             // Not set message type
-            setMetadata(originalMetadata, builder, CSV_MESSAGE_TYPE, currentIndex);
+            setMetadata(originalMetadata, builder, outputMessageType, currentIndex);
 
             int headerLength = header.length;
             int rowLength = strings.length;
-            for (int i = 0; i < headerLength && i < rowLength; i++) {
-                builder.putFields(header[i], ValueUtils.toValue(strings[i]));
+            for (int i = 0; i < headerLength && i < rowLength; ) {
+                int extraLength = getHeaderArrayLength(header, i);
+                if (extraLength == 1) {
+                    builder.putFields(header[i], ValueUtils.toValue(strings[i]));
+                    i++;
+                } else {
+                    String[] values = copyArray(strings, i, i+extraLength);
+                    builder.putFields(header[i], ValueUtils.toValue(values));
+                    i+=extraLength;
+                }
             }
+
             messageBuilder.setMessage(builder);
         }
+    }
+
+    public static String [] copyArray(String [] original, int from, int to){
+        String [] copyArr = new String[Integer.min(to, original.length) - from];
+        for (int i = from; i < to && i < original.length; i++){
+            copyArr[i-from] = original[i];
+        }
+        return copyArr;
+    }
+
+    private int getHeaderArrayLength(String[] header, int index) {
+        int length = 1;
+        for (int i = index + 1; i < header.length && header[i].isEmpty(); i++) {
+            length++;
+        }
+        return length;
     }
 
     private void setMetadata(RawMessageMetadata originalMetadata, Message.Builder messageBuilder, String messageType, int currentIndex) {
@@ -195,7 +244,7 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         );
     }
 
-    private List<String[]> decodeValues(ByteString body) throws IOException {
+    private List<String[]> decodeValues(ByteString body) {
         try (InputStream in = new ByteArrayInputStream(body.toByteArray())) {
             CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
             try {
@@ -207,6 +256,8 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
             } finally {
                 reader.close();
             }
+        } catch (IOException e) {
+            throw new RuntimeException("cannot read data from raw bytes", e);
         }
     }
 
@@ -224,37 +275,6 @@ public class CsvCodec implements MessageListener<MessageGroupBatch> {
         private ErrorHolder(String text, RawMessage originalMessage) {
             this(text, null, originalMessage);
         }
-    }
-
-    private void reportErrors(List<ErrorHolder> errors) {
-        try {
-            EventBatch.Builder errorBatch = EventBatch.newBuilder()
-                    .setParentEventId(rootId);
-            for (ErrorHolder error : errors) {
-                Event event = Event.start()
-                        .endTimestamp()
-                        .type("DecodingError")
-                        .name("Error during decoding data")
-                        .status(Status.FAILED)
-                        .messageID(error.originalMessage.getMetadata().getId())
-                        .bodyData(EventUtils.createMessageBean(error.text));
-                if (error.currentRow != null) {
-                        event.bodyData(EventUtils.createMessageBean("Current data: " + Arrays.toString(error.currentRow)));
-                }
-                errorBatch.addEvents(event.toProto(rootId));
-            }
-
-            eventRouter.send(errorBatch.build());
-        } catch (Exception ex) {
-            LOGGER.error("Cannot send error to the event store", ex);
-        }
-    }
-
-    private void send(MessageGroupBatch batch) throws IOException {
-        if (batch.getGroupsList().isEmpty()) {
-            return;
-        }
-        router.sendAll(batch, DECODE_OUT_ATTRIBUTE);
     }
 
     private void trimEachElement(String[] elements) {

@@ -1,24 +1,73 @@
 # Csv codec (4.0.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
+It is based on [th2-codec](https://github.com/th2-net/th2-codec).
+You can find additional information [here](https://github.com/th2-net/th2-codec/blob/master/README.md)
 
 ## Decoding
 
 The codec decodes each raw message in the received batch.
-Each raw message might contains several line in CSV format.
+Each raw message might contain several line in CSV format.
 If the default header parameter is not set the codec trites the first line from the raw message as a header.
 Otherwise, the default header will be used for decoding the rest of data.
+Output message type is taken from `th2.csv.override_message_type` property in input message.
+If the property missing, the default value (`Csv_Message`) for output message type is used.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
+**NOTE: the encoding is not supported**.
+
+## Decode Example
+
+Simple example: 
+
+```text
+A, B, V, G
+1, 2, 3, 4
+```
+
+into
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": 3,
+  "G": 6
+}
+```
+
+***
+
+**Array** example:
+
+```text
+A, B, V,  ,  , G, D
+1, 2, 3, 4, 5, 6, 7
+```
+
+into
+
+```json
+{
+  "A": 1,
+  "B": 2,
+  "V": [3, 4, 5],
+  "G": 6,
+  "D": 7
+}
+```
+
 ## Settings
-Csv codec has following parameters:
+Csv codec has the following parameters:
 
 ```yaml
 default-header: [A, B, C]
 delimiter: ','
 encoding: UTF-8
 display-name: CodecCsv
+validate-length: true
+publish-header: false
 ```
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
@@ -29,34 +78,54 @@ display-name: CodecCsv
 **display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
 The default value for the name is `CodecCsv`.
 
-## Pins
+**validate-length** - check if csv have different count of values against header's count.
 
-The CSV codec requires at leas one pin with the following attributes:
-1. `decode_in` and `subscribe` - to receive raw data.
-2. `decode_out` and `publish` - to send decoded data.
-
-The number of pins with each set of attributes is not limited. **Pins can use filters**.
+**publish-header** - set to publish decoded header. The default value is `false`.
 
 ## Full configuration example
 
 ```yaml
 apiVersion: th2.exactpro.com/v1
-kind: Th2GenericBox
+kind: Th2Box
 metadata:
   name: codec-csv
 spec:
+  image-name: ghcr.io/th2-net/th2-codec-csv
+  image-version: 4.0.0
   custom-config:
-    default-header: [A, B, C]
-    delimiter: ','
-    encoding: UTF-8
+    codecSettings:
+      default-header: [A, B, C]
+      delimiter: ','
+      encoding: UTF-8
   pins:
+    # encoder
+    - name: in_codec_encode
+      connection-type: mq
+      attributes: [ 'encoder_in', 'parsed', 'subscribe' ]
+    - name: out_codec_encode
+      connection-type: mq
+      attributes: [ 'encoder_out', 'raw', 'publish' ]
     # decoder
     - name: in_codec_decode
       connection-type: mq
-      attributes: ['decode_in', 'subscribe', 'group']
+      attributes: ['decoder_in', 'raw', 'subscribe']
     - name: out_codec_decode
       connection-type: mq
-      attributes: ['decode_out', 'publish', 'parsed']
+      attributes: ['decoder_out', 'parsed', 'publish']
+    # encoder general (technical)
+    - name: in_codec_general_encode
+      connection-type: mq
+      attributes: ['general_encoder_in', 'parsed', 'subscribe']
+    - name: out_codec_general_encode
+      connection-type: mq
+      attributes: ['general_encoder_out', 'raw', 'publish']
+    # decoder general (technical)
+    - name: in_codec_general_decode
+      connection-type: mq
+      attributes: ['general_decoder_in', 'raw', 'subscribe']
+    - name: out_codec_general_decode
+      connection-type: mq
+      attributes: ['general_decoder_out', 'parsed', 'publish']
 ```
 
 ## Release notes
@@ -68,6 +137,18 @@ spec:
 + bom updated from `2.10.1` to `3.1.0`
 + bintray switched to **sonatype**
 
++ Migrated to `th2-codec` core part. Uses the standard configuration format and pins for th2-codec
++ Updated `bom`: `3.1.0` -> `4.1.0`
++ Updated `common`: `3.37.1` -> `3.44.0`
+
+### 3.2.1
+
++ fixed: last array-field as simple value
+
+### 3.2.0
+
++ new length validation parameter
++ array support, to specify array need to have empty header for each value [^array]
 
 ### 3.1.0
 

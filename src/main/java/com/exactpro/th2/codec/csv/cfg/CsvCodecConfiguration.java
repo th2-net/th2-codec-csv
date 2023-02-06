@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,12 @@ package com.exactpro.th2.codec.csv.cfg;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import com.exactpro.th2.codec.api.IPipelineCodecSettings;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-public class CsvCodecConfiguration {
+public class CsvCodecConfiguration implements IPipelineCodecSettings {
     @JsonProperty("default-header")
     @JsonPropertyDescription("The default header that will be used for parsing received batch if no header found in the batch")
     private List<String> defaultHeader;
@@ -38,6 +39,14 @@ public class CsvCodecConfiguration {
     @JsonProperty("display-name")
     @JsonPropertyDescription("Display name for the root event sent to the event store")
     private String displayName = "CodecCsv";
+
+    @JsonProperty("validate-length")
+    @JsonPropertyDescription("Set to validate length of columns or not")
+    private boolean validateLength = true;
+
+    @JsonProperty("publish-header")
+    @JsonPropertyDescription("Set to enable header publication")
+    private boolean publishHeader = false;
 
     public List<String> getDefaultHeader() {
         return defaultHeader;
@@ -69,5 +78,21 @@ public class CsvCodecConfiguration {
 
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
+    }
+
+    public boolean getValidateLength() {
+        return validateLength;
+    }
+
+    public void setValidateLength(boolean  validateLength) {
+        this.validateLength = validateLength;
+    }
+
+    public boolean isPublishHeader() {
+        return publishHeader;
+    }
+
+    public void setPublishHeader(boolean publishHeader) {
+        this.publishHeader = publishHeader;
     }
 }
