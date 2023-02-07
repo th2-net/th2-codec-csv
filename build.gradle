@@ -61,7 +61,7 @@ jar {
 dependencies {
     api platform('com.exactpro.th2:bom:4.1.0')
     implementation 'com.exactpro.th2:common:5.1.0-dev-version-5+'
-    implementation 'com.exactpro.th2:codec:5.0.0-dev-version-5+'
+    implementation 'com.exactpro.th2:codec:5.0.0-TH2-4262-4085740155-cf2c1e3-SNAPSHOT'
 
     implementation "org.slf4j:slf4j-api"
 
