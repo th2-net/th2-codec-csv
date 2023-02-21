@@ -138,7 +138,7 @@ spec:
 + bintray switched to **sonatype**
 
 + Migrated to `th2-codec` core part. Uses the standard configuration format and pins for th2-codec
-+ Updated `bom`: `3.1.0` -> `4.1.0`
++ Updated `bom`: `3.1.0` -> `4.2.0`
 + Updated `common`: `3.37.1` -> `3.44.0`
 
 ### 3.2.1
