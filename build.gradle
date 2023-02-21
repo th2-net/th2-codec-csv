@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'application'
     id 'com.palantir.docker' version '0.25.0'
-    id "org.owasp.dependencycheck" version "7.4.4"
+    id "org.owasp.dependencycheck" version "8.1.0"
 }
 
 dependencyCheck {
@@ -59,7 +59,7 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:4.1.0')
+    api platform('com.exactpro.th2:bom:4.2.0')
     implementation 'com.exactpro.th2:common:5.1.0-dev-version-5-4085018593-8adee33-SNAPSHOT'
     implementation 'com.exactpro.th2:codec:5.0.1-dev-version-5-4162018353-c0c279d-SNAPSHOT'
 
