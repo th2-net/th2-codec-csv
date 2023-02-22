@@ -2,7 +2,7 @@ plugins {
     id 'java-library'
     id 'application'
     id 'com.palantir.docker' version '0.25.0'
-    id "org.owasp.dependencycheck" version "7.4.4"
+    id "org.owasp.dependencycheck" version "8.1.0"
 }
 
 dependencyCheck {
@@ -55,10 +55,10 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:4.1.0')
+    api platform('com.exactpro.th2:bom:4.2.0')
 
-    implementation 'com.exactpro.th2:common:3.44.0'
-    implementation 'com.exactpro.th2:codec:4.7.6'
+    implementation 'com.exactpro.th2:common:3.44.1'
+    implementation 'com.exactpro.th2:codec:4.8.1'
 
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
     implementation 'org.jetbrains:annotations:23.0.0'
@@ -90,4 +90,15 @@ dockerPrepare {
 
 docker {
     copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
+}
+
+dependencyCheck {
+    formats=['SARIF', 'JSON', 'HTML']
+    failBuildOnCVSS=5
+
+    analyzers {
+        assemblyEnabled = false
+        nugetconfEnabled = false
+        nodeEnabled = false
+    }
 }
