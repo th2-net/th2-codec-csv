@@ -1,4 +1,4 @@
-# Csv codec (4.0.2)
+# Csv codec (4.1.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 It is based on [th2-codec](https://github.com/th2-net/th2-codec).
@@ -130,7 +130,7 @@ spec:
 
 ## Release notes
 
-### 4.0.2
+### 4.1.0
 
 + Migrated to `th2-codec:4.8.0`
 + Common updated to `3.44.1`
