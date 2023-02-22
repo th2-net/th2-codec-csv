@@ -135,6 +135,7 @@ spec:
 + Migrated to `th2-codec:4.8.0`
 + Common updated to `3.44.1`
 + Bom updated to `4.2.0`
++ Codec to `4.8.1`
 
 ### 4.0.1
 
