@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.exactpro.th2.codec.csv;
 
 import static java.util.Objects.requireNonNull;
@@ -48,18 +49,18 @@ import com.exactpro.th2.common.message.MessageUtils;
 import com.exactpro.th2.common.value.ValueUtils;
 import com.google.protobuf.ByteString;
 
-public class CsvCodec implements IPipelineCodec {
+public abstract class CsvCodec implements IPipelineCodec {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CsvCodec.class);
-    private static final String HEADER_MSG_TYPE = "Csv_Header";
-    private static final String CSV_MESSAGE_TYPE = "Csv_Message";
-    private static final String HEADER_FIELD_NAME = "Header";
+    protected static final String HEADER_MSG_TYPE = "Csv_Header";
+    protected static final String CSV_MESSAGE_TYPE = "Csv_Message";
+    protected static final String HEADER_FIELD_NAME = "Header";
 
-    private static final String OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "th2.csv.override_message_type";
+    protected static final String OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE = "th2.csv.override_message_type";
 
-    private final CsvCodecConfiguration configuration;
-    private final String[] defaultHeader;
-    private final Charset charset;
+    protected final CsvCodecConfiguration configuration;
+    protected final String[] defaultHeader;
+    protected final Charset charset;
 
     public CsvCodec(CsvCodecConfiguration configuration) {
         this.configuration = requireNonNull(configuration, "'Configuration' parameter");
@@ -79,7 +80,7 @@ public class CsvCodec implements IPipelineCodec {
     @Override
     public MessageGroup decode(@NotNull MessageGroup messageGroup) {
         MessageGroup.Builder groupBuilder = MessageGroup.newBuilder();
-        Collection<ErrorHolder> errors = new ArrayList<>();
+        Collection<ErrorHolder<RawMessage>> errors = new ArrayList<>();
         for (AnyMessage anyMessage : messageGroup.getMessagesList()) {
             if (anyMessage.hasMessage()) {
                 groupBuilder.addMessages(anyMessage);
@@ -97,12 +98,12 @@ public class CsvCodec implements IPipelineCodec {
             }
 
             ByteString body = rawMessage.getBody();
-            List<String[]> data = decodeValues(body);
+            List<String[]> data = decodeValues(body.toByteArray());
             if (data.isEmpty()) {
                 if (LOGGER.isErrorEnabled()) {
                     LOGGER.error("The raw message does not contains any data: {}", MessageUtils.toJson(rawMessage));
                 }
-                errors.add(new ErrorHolder("The raw message does not contains any data", rawMessage));
+                errors.add(new ErrorHolder<>("The raw message does not contains any data", rawMessage));
                 continue;
             }
             decodeCsvData(errors, groupBuilder, rawMessage, data);
@@ -119,7 +120,7 @@ public class CsvCodec implements IPipelineCodec {
         return decode(messageGroup);
     }
 
-    private RuntimeException createException(Collection<ErrorHolder> errors) {
+    private RuntimeException createException(Collection<ErrorHolder<RawMessage>> errors) {
         return new DecodeException(
                 "Cannot decode some messages: " + System.lineSeparator() + errors.stream()
                         .map(it -> "Message " + MessageUtils.toJson(it.originalMessage.getMetadata().getId()) + " cannot be decoded because " + it.text)
@@ -140,10 +141,9 @@ public class CsvCodec implements IPipelineCodec {
     }
 
     @Override
-    public void close() {
-    }
+    public void close() {}
 
-    private void decodeCsvData(Collection<ErrorHolder> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
+    private void decodeCsvData(Collection<ErrorHolder<RawMessage>> errors, MessageGroup.Builder groupBuilder, RawMessage rawMessage, Iterable<String[]> data) {
         RawMessageMetadata originalMetadata = rawMessage.getMetadata();
 
         final String outputMessageType = originalMetadata.getPropertiesOrDefault(OVERRIDE_MESSAGE_TYPE_PROP_NAME_LOWERCASE, CSV_MESSAGE_TYPE);
@@ -157,7 +157,7 @@ public class CsvCodec implements IPipelineCodec {
                 if (LOGGER.isErrorEnabled()) {
                     LOGGER.error("Empty raw at {} index (starts with 1). Data: {}", currentIndex, data);
                 }
-                errors.add(new ErrorHolder("Empty raw at " + currentIndex + " index (starts with 1)", rawMessage));
+                errors.add(new ErrorHolder<>("Empty raw at " + currentIndex + " index (starts with 1)", rawMessage));
                 continue;
             }
 
@@ -188,7 +188,7 @@ public class CsvCodec implements IPipelineCodec {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(rawMessage.toString());
                 }
-                errors.add(new ErrorHolder(msg, strings, rawMessage));
+                errors.add(new ErrorHolder<>(msg, strings, rawMessage));
             }
 
             AnyMessage.Builder messageBuilder = groupBuilder.addMessagesBuilder();
@@ -223,7 +223,7 @@ public class CsvCodec implements IPipelineCodec {
         return copyArr;
     }
 
-    private int getHeaderArrayLength(String[] header, int index) {
+    protected int getHeaderArrayLength(String[] header, int index) {
         int length = 1;
         for (int i = index + 1; i < header.length && header[i].isEmpty(); i++) {
             length++;
@@ -244,8 +244,8 @@ public class CsvCodec implements IPipelineCodec {
         );
     }
 
-    private List<String[]> decodeValues(ByteString body) {
-        try (InputStream in = new ByteArrayInputStream(body.toByteArray())) {
+    protected List<String[]> decodeValues(byte[] body) {
+        try (InputStream in = new ByteArrayInputStream(body)) {
             CsvReader reader = new CsvReader(in, configuration.getDelimiter(), charset);
             try {
                 List<String[]> result = new ArrayList<>();
@@ -261,23 +261,23 @@ public class CsvCodec implements IPipelineCodec {
         }
     }
 
-    private static class ErrorHolder {
+    protected static class ErrorHolder<T> {
         public final String text;
         public final String[] currentRow;
-        public final RawMessage originalMessage;
+        public final T originalMessage;
 
-        private ErrorHolder(String text, String[] currentRow, RawMessage originalMessage) {
+        protected ErrorHolder(String text, String[] currentRow, T originalMessage) {
             this.text = text;
             this.currentRow = currentRow;
             this.originalMessage = originalMessage;
         }
 
-        private ErrorHolder(String text, RawMessage originalMessage) {
+        protected ErrorHolder(String text, T originalMessage) {
             this(text, null, originalMessage);
         }
     }
 
-    private void trimEachElement(String[] elements) {
+    protected void trimEachElement(String[] elements) {
         for (int i = 0; i < elements.length; i++) {
             String element = elements[i];
             elements[i] = element.trim();
