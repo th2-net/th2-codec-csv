@@ -16,10 +16,7 @@ import com.exactpro.th2.common.grpc.MessageID as ProtoMessageID
 
 import com.exactpro.th2.common.message.logId
 import com.exactpro.th2.common.message.toJson
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Message
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageGroup
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.ParsedMessage
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.*
 import com.exactpro.th2.common.value.toValue
 import mu.KotlinLogging
 import java.io.ByteArrayInputStream
@@ -95,7 +92,7 @@ class CsvCodec(private val config: CsvCodecConfiguration) : IPipelineCodec {
                 continue
             }
 
-            val data = decodeValues(message.body.array())
+            val data = decodeValues(message.body.toByteArray())
 
             if (data.isEmpty()) {
                 LOGGER.error { "The raw message does not contains any data: ${message.toJson()}" }
