@@ -1,4 +1,4 @@
-# Csv codec (5.0.0)
+# Csv codec (5.1.0)
 ## Description
 Designed for decode csv raw messages from csv reader to the parsed messages.
 It is based on [th2-codec](https://github.com/th2-net/th2-codec).
@@ -130,7 +130,12 @@ spec:
 
 ## Release notes
 
+### 5.1.0
+
++ TH2 transport protocol support
+
 ### 5.0.0
+
 + Migrated to books&pages concept
 
 ### 4.1.0

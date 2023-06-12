@@ -17,7 +17,11 @@
 package com.exactpro.th2.codec.csv
 
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.*
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageGroup
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.ParsedMessage
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Direction
 import io.netty.buffer.Unpooled
 import org.apache.commons.lang3.StringUtils
 import org.junit.jupiter.api.Assertions
@@ -25,12 +29,12 @@ import org.junit.jupiter.api.Test
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
-class TestTransportCsvCodec {
+class TestCsvCodecTransport {
     @Test
     fun decodesDataUsingDefaultHeader() {
         val configuration = CsvCodecConfiguration()
         configuration.defaultHeader = listOf("A", "B", "C")
-        val codec = TransportCsvCodec(configuration)
+        val codec = CsvCodec(configuration)
         val group = MessageGroup(listOf(createCsvMessage("1,2,3")))
         val decodedGroup = codec.decode(group)
 

@@ -57,7 +57,7 @@ public class CodecFactory implements IPipelineCodecFactory {
     @Override
     public IPipelineCodec create(@Nullable IPipelineCodecSettings settings) {
         if (settings instanceof CsvCodecConfiguration) {
-            return new TransportCsvCodec((CsvCodecConfiguration)settings);
+            return new CsvCodec((CsvCodecConfiguration)settings);
         }
         throw new IllegalArgumentException("Unexpected setting type: " + (settings == null ? "null" : settings.getClass()));
     }

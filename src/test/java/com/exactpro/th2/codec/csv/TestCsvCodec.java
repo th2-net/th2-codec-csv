@@ -54,7 +54,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setValidateLength(false);
             configuration.setPublishHeader(true);
-            TransportCsvCodec codec = createCodec(configuration);
+            CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
                     .build();
@@ -98,7 +98,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setValidateLength(false);
             configuration.setPublishHeader(true);
-            TransportCsvCodec codec = createCodec(configuration);
+            CsvCodec codec = createCodec(configuration);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
                     .build();
@@ -138,7 +138,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void decodeArrayInMiddle() throws IOException {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, ,C", "1,2,3,4"))
                     .build();
@@ -179,7 +179,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void decodesDataAndSkipsHeader() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C", "1,2,3"))
                     .build();
@@ -218,7 +218,7 @@ void decodeArrayWithDifferentLength() throws IOException {
         void skipsHeaderPublishing() {
             final var config = new CsvCodecConfiguration();
             config.setPublishHeader(false);
-            TransportCsvCodec codec = createCodec(config);
+            CsvCodec codec = createCodec(config);
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C", "1,2,3"))
                     .build();
@@ -249,7 +249,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
             final var config = new CsvCodecConfiguration();
             config.setPublishHeader(false);
-            TransportCsvCodec codec = createCodec(config);
+            CsvCodec codec = createCodec(config);
             final var csvMessage = createCsvMessage(Map.of("th2.csv.override_message_type", customType), "A,B,C", "1,2,3");
 
             MessageGroup group = MessageGroup.newBuilder()
@@ -278,7 +278,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void trimsEndOfTheLine() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C\n\r1,2,3\n"))
@@ -316,7 +316,7 @@ void decodeArrayWithDifferentLength() throws IOException {
         void decodesDataUsingDefaultHeader() {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDefaultHeader(List.of("A", "B", "C"));
-            TransportCsvCodec codec = createCodec(configuration);
+            CsvCodec codec = createCodec(configuration);
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(
@@ -342,7 +342,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void decodesDataWithEscapedCharacters() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(
@@ -383,7 +383,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setDelimiter(';');
             configuration.setPublishHeader(true);
-            TransportCsvCodec codec = createCodec(configuration);
+            CsvCodec codec = createCodec(configuration);
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(
@@ -421,7 +421,7 @@ void decodeArrayWithDifferentLength() throws IOException {
 
         @Test
         void trimsWhitespacesDuringDecoding() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
 
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(
@@ -463,14 +463,14 @@ void decodeArrayWithDifferentLength() throws IOException {
     class TestNegative {
         @Test
         void reportsErrorIfNotDataFound() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
             Assertions.assertThrows(DecodeException.class, () ->
                     codec.decode(MessageGroup.newBuilder().addMessages(createCsvMessage("")).build()));
         }
 
         @Test
         void reportsErrorIfRawDataIsEmpty() {
-            TransportCsvCodec codec = createCodec();
+            CsvCodec codec = createCodec();
 
             Assertions.assertThrows(DecodeException.class, () ->
                     codec.decode(MessageGroup.newBuilder()
@@ -481,14 +481,14 @@ void decodeArrayWithDifferentLength() throws IOException {
         }
     }
 
-    private TransportCsvCodec createCodec() {
+    private CsvCodec createCodec() {
         final var configuration = new CsvCodecConfiguration();
         configuration.setPublishHeader(true);
         return createCodec(configuration);
     }
 
-    private TransportCsvCodec createCodec(CsvCodecConfiguration configuration) {
-        return new TransportCsvCodec(configuration);
+    private CsvCodec createCodec(CsvCodecConfiguration configuration) {
+        return new CsvCodec(configuration);
     }
 
     private AnyMessage createCsvMessage(String... data) {
