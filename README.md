@@ -132,7 +132,7 @@ spec:
 
 ### 5.1.0
 
-+ TH2 transport protocol support
++ th2 transport protocol support
 
 ### 5.0.0
 

@@ -65,7 +65,7 @@ dependencies {
     api platform('com.exactpro.th2:bom:4.2.0')
     implementation "com.exactpro.th2:common:5.3.0-json-raw-body-5242142633-7ac1672-SNAPSHOT"
     implementation "com.exactpro.th2:codec:5.3.0-new-proto-5241354905-69d03b5-SNAPSHOT"
-
+    implementation "com.exactpro.th2:common-utils:2.1.0-transport-protocol-5347774882-e4aa8e6-SNAPSHOT"
     implementation "org.slf4j:slf4j-api"
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
