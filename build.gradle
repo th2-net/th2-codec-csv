@@ -3,17 +3,13 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.6.21'
     id 'application'
     id 'com.palantir.docker' version '0.25.0'
-    id "org.owasp.dependencycheck" version "8.1.2"
+    id "org.owasp.dependencycheck" version "8.2.1"
 }
 
 apply plugin: 'kotlin-kapt'
 
 dependencyCheck {
-    format='HTML'
-}
-
-ext {
-    sharedDir = file("${project.rootDir}/shared")
+    format = 'HTML'
 }
 
 group = 'com.exactpro.th2'
@@ -23,10 +19,6 @@ sourceCompatibility = 11
 targetCompatibility = 11
 
 repositories {
-    maven {
-        name 'MavenLocal'
-        url sharedDir
-    }
     mavenCentral()
 
     maven {
@@ -50,30 +42,36 @@ repositories {
 jar {
     manifest {
         attributes(
-                'Created-By':               "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
-                'Specification-Title':      '',
-                'Specification-Vendor':     'Exactpro Systems LLC',
-                'Implementation-Title':     project.archivesBaseName,
-                'Implementation-Vendor':    'Exactpro Systems LLC',
+                'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
+                'Specification-Title': '',
+                'Specification-Vendor': 'Exactpro Systems LLC',
+                'Implementation-Title': project.archivesBaseName,
+                'Implementation-Vendor': 'Exactpro Systems LLC',
                 'Implementation-Vendor-Id': 'com.exactpro',
-                'Implementation-Version':   project.version
+                'Implementation-Version': project.version
         )
     }
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:4.2.0')
-    implementation "com.exactpro.th2:common:5.3.0-json-raw-body-5242142633-7ac1672-SNAPSHOT"
-    implementation "com.exactpro.th2:codec:5.3.0-new-proto-5241354905-69d03b5-SNAPSHOT"
+    api platform('com.exactpro.th2:bom:4.4.0-update-libs-5345334944-c71fdc9-SNAPSHOT')
+    implementation('com.exactpro.th2:common:5.3.0-separate-executor-5347518176-63bc4ea-SNAPSHOT') {
+        exclude group: 'com.exactpro.th2', module: 'cradle-core'
+        exclude group: 'com.exactpro.th2', module: 'cradle-cassandra'
+    }
+    implementation 'com.exactpro.th2:codec:5.3.0-new-proto-5377025425-07b1e3e-SNAPSHOT'
     implementation "com.exactpro.th2:common-utils:2.1.0-transport-protocol-5347774882-e4aa8e6-SNAPSHOT"
+
+    implementation 'io.netty:netty-buffer'
+
     implementation "org.slf4j:slf4j-api"
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
 
     implementation 'net.sourceforge.javacsv:javacsv:2.0'
 
-    compileOnly 'com.google.auto.service:auto-service-annotations:1.1.0'
-    annotationProcessor 'com.google.auto.service:auto-service:1.1.0'
+    compileOnly 'com.google.auto.service:auto-service-annotations:1.1.1'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
 
     implementation 'io.github.microutils:kotlin-logging:3.0.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
@@ -101,9 +99,15 @@ docker {
     copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
 }
 
+configurations {
+    compileClasspath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
+
 dependencyCheck {
-    formats=['SARIF', 'JSON', 'HTML']
-    failBuildOnCVSS=5
+    formats = ['SARIF', 'JSON', 'HTML']
+    failBuildOnCVSS = 5
 
     analyzers {
         assemblyEnabled = false
