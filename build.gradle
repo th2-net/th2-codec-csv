@@ -54,27 +54,24 @@ jar {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:4.4.0-update-libs-5345334944-c71fdc9-SNAPSHOT')
-    implementation('com.exactpro.th2:common:5.3.0-separate-executor-5347518176-63bc4ea-SNAPSHOT') {
-        exclude group: 'com.exactpro.th2', module: 'cradle-core'
-        exclude group: 'com.exactpro.th2', module: 'cradle-cassandra'
-    }
-    implementation 'com.exactpro.th2:codec:5.3.0-new-proto-5377025425-07b1e3e-SNAPSHOT'
-    implementation "com.exactpro.th2:common-utils:2.1.0-transport-protocol-5347774882-e4aa8e6-SNAPSHOT"
+    api platform("com.exactpro.th2:bom:4.4.0")
+    implementation "com.exactpro.th2:common:5.3.0-separate-executor-5712647407-cd52dd9-SNAPSHOT"
+    implementation "com.exactpro.th2:codec:5.3.0-new-proto-5377025425-07b1e3e-SNAPSHOT"
+    implementation "com.exactpro.th2:common-utils:2.1.0-transport-protocol-5599170164-aa085e1-SNAPSHOT"
 
-    implementation 'io.netty:netty-buffer'
+    implementation "io.netty:netty-buffer"
 
     implementation "org.slf4j:slf4j-api"
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
 
-    implementation 'net.sourceforge.javacsv:javacsv:2.0'
+    implementation "net.sourceforge.javacsv:javacsv:2.0"
 
-    compileOnly 'com.google.auto.service:auto-service-annotations:1.1.1'
-    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly "com.google.auto.service:auto-service-annotations:1.1.1"
+    annotationProcessor "com.google.auto.service:auto-service:1.1.1"
 
-    implementation 'io.github.microutils:kotlin-logging:3.0.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.3'
+    implementation "io.github.microutils:kotlin-logging:3.0.0"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.9.3"
 }
 
 test {
