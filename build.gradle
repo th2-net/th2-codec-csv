@@ -1,67 +1,26 @@
-plugins {
-    id 'java-library'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
-    id 'application'
-    id 'com.palantir.docker' version '0.25.0'
-    id "org.owasp.dependencycheck" version "8.2.1"
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath "com.exactpro.th2:th2-gradle-plugin:0.0.1-dev-5915772757-13a28ae-SNAPSHOT"
+    }
 }
+
+apply plugin: "com.exactpro.th2.common-conventions"
+apply plugin: "com.exactpro.th2.docker-conventions"
 
 apply plugin: 'kotlin-kapt'
 
-dependencyCheck {
-    format = 'HTML'
-}
-
-group = 'com.exactpro.th2'
-version = release_version
-
-sourceCompatibility = 11
-targetCompatibility = 11
-
-repositories {
-    mavenCentral()
-
-    maven {
-        name 'Sonatype_snapshots'
-        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-    }
-
-    maven {
-        name 'Sonatype_releases'
-        url 'https://s01.oss.sonatype.org/content/repositories/releases/'
-    }
-
-    mavenLocal()
-
-    configurations.configureEach {
-        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
-    }
-}
-
-jar {
-    manifest {
-        attributes(
-                'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
-                'Specification-Title': '',
-                'Specification-Vendor': 'Exactpro Systems LLC',
-                'Implementation-Title': project.archivesBaseName,
-                'Implementation-Vendor': 'Exactpro Systems LLC',
-                'Implementation-Vendor-Id': 'com.exactpro',
-                'Implementation-Version': project.version
-        )
-    }
-}
-
 dependencies {
-    api platform("com.exactpro.th2:bom:4.4.0")
-    implementation "com.exactpro.th2:common:5.3.0-separate-executor-5712647407-cd52dd9-SNAPSHOT"
-    implementation "com.exactpro.th2:codec:5.3.0-new-proto-5728583040-0747779-SNAPSHOT"
-    implementation "com.exactpro.th2:common-utils:2.1.0-transport-protocol-5599170164-aa085e1-SNAPSHOT"
+    api platform("com.exactpro.th2:bom:4.5.0")
+    implementation "com.exactpro.th2:common:5.4.0-dev"
+    implementation "com.exactpro.th2:codec:5.3.0-new-proto-+"
+    implementation "com.exactpro.th2:common-utils:2.2.0-dev"
 
-    implementation "io.netty:netty-buffer"
-
-    implementation "org.slf4j:slf4j-api"
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
 
@@ -70,46 +29,10 @@ dependencies {
     compileOnly "com.google.auto.service:auto-service-annotations:1.1.1"
     annotationProcessor "com.google.auto.service:auto-service:1.1.1"
     kapt "com.google.auto.service:auto-service:1.1.1"
-
-    implementation "io.github.microutils:kotlin-logging:3.0.0" // The last version bases on kotlin 1.6.0
-    testImplementation "org.junit.jupiter:junit-jupiter:5.9.3"
-}
-
-test {
-    useJUnitPlatform()
-}
-
-application {
-    mainClassName 'com.exactpro.th2.codec.MainKt'
-}
-
-applicationName = 'service'
-
-distTar {
-    archiveFileName.set("${applicationName}.tar")
-}
-
-dockerPrepare {
-    dependsOn distTar
-}
-
-docker {
-    copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
 }
 
 configurations {
     compileClasspath {
         resolutionStrategy.activateDependencyLocking()
-    }
-}
-
-dependencyCheck {
-    formats = ['SARIF', 'JSON', 'HTML']
-    failBuildOnCVSS = 5
-
-    analyzers {
-        assemblyEnabled = false
-        nugetconfEnabled = false
-        nodeEnabled = false
     }
 }
