@@ -19,6 +19,7 @@ package com.exactpro.th2.codec.csv;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -27,8 +28,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.exactpro.th2.codec.api.IReportingContext;
+import com.exactpro.th2.codec.api.impl.ReportingContext;
+import com.exactpro.th2.common.grpc.ConnectionID;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -46,11 +49,14 @@ import com.exactpro.th2.common.grpc.Value;
 import com.google.protobuf.ByteString;
 
 class TestCsvCodec {
+    private final IReportingContext reportingContext = new ReportingContext();
+    private static final String TEST_SESSION = "test-session";
+
     @Nested
     class TestPositive {
 
         @Test
-void decodeArrayWithDifferentLength() throws IOException {
+        void decodeArrayWithDifferentLength() throws IOException {
             CsvCodecConfiguration configuration = new CsvCodecConfiguration();
             configuration.setValidateLength(false);
             configuration.setPublishHeader(true);
@@ -58,7 +64,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, , ,", "1,2,3,4"))
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -102,7 +108,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C ,", "1,2,3"))
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -142,7 +148,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B, ,C", "1,2,3,4"))
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -184,7 +190,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                     .addMessages(createCsvMessage("A,B,C", "1,2,3"))
                     .build();
 
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -223,7 +229,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                     .addMessages(createCsvMessage("A,B,C", "1,2,3"))
                     .build();
 
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(1, value.getMessagesCount());
 
             Message message = getMessage(value, 0);
@@ -256,7 +262,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                     .addMessages(csvMessage)
                     .build();
 
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(1, value.getMessagesCount());
 
             Message message = getMessage(value, 0);
@@ -283,7 +289,7 @@ void decodeArrayWithDifferentLength() throws IOException {
             MessageGroup group = MessageGroup.newBuilder()
                     .addMessages(createCsvMessage("A,B,C\n\r1,2,3\n"))
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -323,7 +329,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             createCsvMessage("1,2,3")
                     )
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(1, value.getMessagesCount());
 
             Message message = getMessage(value, 0);
@@ -349,7 +355,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             createCsvMessage("A,B", "\"1,2\",\"\"\"value\"\"\"")
                     )
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -390,7 +396,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             createCsvMessage("A;B", "1,2;3")
                     )
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -428,7 +434,7 @@ void decodeArrayWithDifferentLength() throws IOException {
                             createCsvMessage("A, B, C", "1, , 3 3")
                     )
                     .build();
-            MessageGroup value = codec.decode(group);
+            MessageGroup value = codec.decode(group, reportingContext);
             assertEquals(2, value.getMessagesCount());
 
             Message header = getMessage(value, 0);
@@ -464,19 +470,35 @@ void decodeArrayWithDifferentLength() throws IOException {
         @Test
         void reportsErrorIfNotDataFound() {
             CsvCodec codec = createCodec();
-            Assertions.assertThrows(DecodeException.class, () ->
-                    codec.decode(MessageGroup.newBuilder().addMessages(createCsvMessage("")).build()));
+            assertThrows(DecodeException.class, () ->
+                    codec.decode(MessageGroup.newBuilder().addMessages(createCsvMessage("")).build(), reportingContext));
         }
 
         @Test
         void reportsErrorIfRawDataIsEmpty() {
             CsvCodec codec = createCodec();
 
-            Assertions.assertThrows(DecodeException.class, () ->
-                    codec.decode(MessageGroup.newBuilder()
-                            .addMessages(createCsvMessage("A,B,C"))
-                            .addMessages(createCsvMessage(""))
-                            .build())
+            assertThrows(DecodeException.class, () ->
+                    codec.decode(
+                            MessageGroup.newBuilder()
+                                    .addMessages(createCsvMessage("A,B,C"))
+                                    .addMessages(createCsvMessage(""))
+                                    .build(),
+                            reportingContext)
+            );
+        }
+
+        @Test
+        void reportsErrorIfDefaultHeaderAndDataHaveDifferentSize() {
+            CsvCodecConfiguration configuration = new CsvCodecConfiguration();
+            configuration.setDefaultHeader(List.of("A", "B"));
+            CsvCodec codec = createCodec(configuration);
+
+            assertThrows(DecodeException.class, () ->
+                    codec.decode(
+                            MessageGroup.newBuilder().addMessages(createCsvMessage("1,2,3")).build(),
+                            reportingContext
+                    )
             );
         }
     }
@@ -499,7 +521,10 @@ void decodeArrayWithDifferentLength() throws IOException {
         Builder builder = RawMessage.newBuilder()
                 .setBody(ByteString.copyFrom(String.join(StringUtils.LF, data).getBytes(StandardCharsets.UTF_8)));
         RawMessageMetadata.Builder metadataBuilder = RawMessageMetadata.newBuilder()
-                .setId(MessageID.newBuilder().setSequence(System.nanoTime()).build())
+                .setId(MessageID.newBuilder()
+                        .setSequence(System.nanoTime())
+                        .setConnectionId(ConnectionID.newBuilder().setSessionAlias(TEST_SESSION).build())
+                        .build())
                 .putAllProperties(metadataProps);
         builder.setMetadata(metadataBuilder.build());
         return AnyMessage.newBuilder().setRawMessage(builder).build();

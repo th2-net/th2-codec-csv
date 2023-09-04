@@ -16,10 +16,12 @@
 
 package com.exactpro.th2.codec.csv
 
+import com.exactpro.th2.codec.api.IReportingContext
+import com.exactpro.th2.codec.api.impl.ReportingContext
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageGroup
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.ParsedMessage
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Direction
 import io.netty.buffer.Unpooled
@@ -30,13 +32,15 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 
 class TestCsvCodecTransport {
+    private val reportingContext: IReportingContext = ReportingContext()
+
     @Test
     fun decodesDataUsingDefaultHeader() {
         val configuration = CsvCodecConfiguration()
         configuration.defaultHeader = listOf("A", "B", "C")
         val codec = CsvCodec(configuration)
         val group = MessageGroup(listOf(createCsvMessage("1,2,3")))
-        val decodedGroup = codec.decode(group)
+        val decodedGroup = codec.decode(group,reportingContext)
 
         Assertions.assertEquals(1, decodedGroup.messages.size)
         val message = decodedGroup.messages[0] as ParsedMessage
