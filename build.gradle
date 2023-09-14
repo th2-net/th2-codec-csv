@@ -1,91 +1,32 @@
-plugins {
-    id 'java-library'
-    id 'application'
-    id 'com.palantir.docker' version '0.25.0'
-}
-
-ext {
-    sharedDir = file("${project.rootDir}/shared")
-}
-
-group = 'com.exactpro.th2'
-version = release_version
-
-sourceCompatibility = 11
-targetCompatibility = 11
-
-repositories {
-    maven {
-        name 'MavenLocal'
-        url sharedDir
+buildscript {
+    repositories {
+        gradlePluginPortal()
+        maven {
+            url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+        }
     }
-    mavenCentral()
-    maven {
-        name 'Sonatype_snapshots'
-        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-    }
-    maven {
-        name 'Sonatype_releases'
-        url 'https://s01.oss.sonatype.org/content/repositories/releases/'
-    }
-
-    configurations.all {
-        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-        resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+    dependencies {
+        classpath "com.exactpro.th2:th2-gradle-plugin:0.0.1-dev-5915772757-13a28ae-SNAPSHOT"
     }
 }
 
-jar {
-    manifest {
-        attributes(
-                'Created-By':               "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
-                'Specification-Title':      '',
-                'Specification-Vendor':     'Exactpro Systems LLC',
-                'Implementation-Title':     project.archivesBaseName,
-                'Implementation-Vendor':    'Exactpro Systems LLC',
-                'Implementation-Vendor-Id': 'com.exactpro',
-                'Implementation-Version':   project.version
-        )
-    }
-}
+apply plugin: "com.exactpro.th2.common-conventions"
+apply plugin: "com.exactpro.th2.docker-conventions"
+
+apply plugin: 'kotlin-kapt'
 
 dependencies {
-    api platform('com.exactpro.th2:bom:3.2.0')
+    api platform("com.exactpro.th2:bom:4.5.0")
+    implementation "com.exactpro.th2:common:5.4.0-dev"
+    implementation "com.exactpro.th2:codec:5.3.0-dev"
+    implementation "com.exactpro.th2:common-utils:2.2.0-dev"
 
-    implementation 'com.exactpro.th2:common:3.40.0'
-    implementation 'com.exactpro.th2:codec:4.8.0-TS-1127-2986879028-SNAPSHOT'
+    implementation "org.apache.commons:commons-lang3"
+    implementation "com.fasterxml.jackson.core:jackson-databind"
 
-    implementation "org.slf4j:slf4j-log4j12"
-    implementation "org.slf4j:slf4j-api"
+    implementation "net.sourceforge.javacsv:javacsv:2.0"
 
-    implementation 'net.sourceforge.javacsv:javacsv:2.0'
-    implementation 'org.jetbrains:annotations:23.0.0'
-
-    compileOnly 'com.google.auto.service:auto-service-annotations:1.0.1'
-    annotationProcessor 'com.google.auto.service:auto-service:1.0.1'
-
-    testImplementation 'org.mockito:mockito-core:3.5.15'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
-}
-
-test {
-    useJUnitPlatform()
-}
-
-application {
-    mainClassName 'com.exactpro.th2.codec.MainKt'
-}
-
-applicationName = 'service'
-
-distTar {
-    archiveFileName.set("${applicationName}.tar")
-}
-
-dockerPrepare {
-    dependsOn distTar
-}
-
-docker {
-    copySpec.from(tarTree("$buildDir/distributions/${applicationName}.tar"))
+    compileOnly "com.google.auto.service:auto-service-annotations:1.1.1"
+    annotationProcessor "com.google.auto.service:auto-service:1.1.1"
+    kapt "com.google.auto.service:auto-service:1.1.1"
 }
