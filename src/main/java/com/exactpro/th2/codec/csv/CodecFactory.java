@@ -32,14 +32,7 @@ import com.google.auto.service.AutoService;
 
 @AutoService(IPipelineCodecFactory.class)
 public class CodecFactory implements IPipelineCodecFactory {
-    public static final String PROTOCOL = "csv";
-    private static final Set<String> PROTOCOLS = Collections.singleton(PROTOCOL);
-
-    @NotNull
-    @Override
-    public String getProtocol() {
-        return PROTOCOL;
-    }
+    private static final Set<String> PROTOCOLS = Collections.singleton("csv");
 
     @NotNull
     @Override

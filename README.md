@@ -1,17 +1,18 @@
-# Csv codec (5.0.0)
+# Csv codec (5.1.0)
+
 ## Description
-Designed for decode csv raw messages from csv reader to the parsed messages.
-It is based on [th2-codec](https://github.com/th2-net/th2-codec).
-You can find additional information [here](https://github.com/th2-net/th2-codec/blob/master/README.md)
+
+Designed for decode csv raw messages from csv reader to the parsed messages. It is based
+on [th2-codec](https://github.com/th2-net/th2-codec). You can find additional
+information [here](https://github.com/th2-net/th2-codec/blob/master/README.md)
 
 ## Decoding
 
-The codec decodes each raw message in the received batch.
-Each raw message might contain several line in CSV format.
-If the default header parameter is not set the codec trites the first line from the raw message as a header.
-Otherwise, the default header will be used for decoding the rest of data.
-Output message type is taken from `th2.csv.override_message_type` property in input message.
-If the property missing, the default value (`Csv_Message`) for output message type is used.
+The codec decodes each raw message in the received batch. Each raw message might contain several line in CSV format. If
+the default header parameter is not set the codec trites the first line from the raw message as a header. Otherwise, the
+default header will be used for decoding the rest of data. Output message type is taken
+from `th2.csv.override_message_type` property in input message. If the property missing, the default
+value (`Csv_Message`) for output message type is used.
 
 If no data was decoded from raw message, the message will be skipped, and an error event will be reported.
 
@@ -19,7 +20,7 @@ If no data was decoded from raw message, the message will be skipped, and an err
 
 ## Decode Example
 
-Simple example: 
+Simple example:
 
 ```text
 A, B, V, G
@@ -52,31 +53,37 @@ into
 {
   "A": 1,
   "B": 2,
-  "V": [3, 4, 5],
+  "V": [
+    3,
+    4,
+    5
+  ],
   "G": 6,
   "D": 7
 }
 ```
 
 ## Settings
+
 Csv codec has the following parameters:
 
 ```yaml
-default-header: [A, B, C]
+default-header: [ A, B, C ]
 delimiter: ','
 encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
 publish-header: false
 ```
+
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
 
 **delimiter** - the delimiter to split values in received data. The default value is `,`.
 
 **encoding** - the encoding for the received data. The default value is `UTF-8`.
 
-**display-name** - the name to set in the root event sent to the event store. All errors during decoding will be attached to that root event.
-The default value for the name is `CodecCsv`.
+**display-name** - the name to set in the root event sent to the event store. All errors during decoding will be
+attached to that root event. The default value for the name is `CodecCsv`.
 
 **validate-length** - check if csv have different count of values against header's count.
 
@@ -94,7 +101,7 @@ spec:
   image-version: 4.0.0
   custom-config:
     codecSettings:
-      default-header: [A, B, C]
+      default-header: [ A, B, C ]
       delimiter: ','
       encoding: UTF-8
   pins:
@@ -108,29 +115,37 @@ spec:
     # decoder
     - name: in_codec_decode
       connection-type: mq
-      attributes: ['decoder_in', 'raw', 'subscribe']
+      attributes: [ 'decoder_in', 'raw', 'subscribe' ]
     - name: out_codec_decode
       connection-type: mq
-      attributes: ['decoder_out', 'parsed', 'publish']
+      attributes: [ 'decoder_out', 'parsed', 'publish' ]
     # encoder general (technical)
     - name: in_codec_general_encode
       connection-type: mq
-      attributes: ['general_encoder_in', 'parsed', 'subscribe']
+      attributes: [ 'general_encoder_in', 'parsed', 'subscribe' ]
     - name: out_codec_general_encode
       connection-type: mq
-      attributes: ['general_encoder_out', 'raw', 'publish']
+      attributes: [ 'general_encoder_out', 'raw', 'publish' ]
     # decoder general (technical)
     - name: in_codec_general_decode
       connection-type: mq
-      attributes: ['general_decoder_in', 'raw', 'subscribe']
+      attributes: [ 'general_decoder_in', 'raw', 'subscribe' ]
     - name: out_codec_general_decode
       connection-type: mq
-      attributes: ['general_decoder_out', 'parsed', 'publish']
+      attributes: [ 'general_decoder_out', 'parsed', 'publish' ]
 ```
 
 ## Release notes
 
+### 5.1.0
+
++ Supports th2 transport protocol
++ Updated bom:4.4.0
++ Updated common:5.3.0
++ Updated codec:5.3.0
+
 ### 5.0.0
+
 + Migrated to books&pages concept
 
 ### 4.1.0
@@ -168,7 +183,8 @@ spec:
 
 + reads dictionaries from the /var/th2/config/dictionary folder.
 + uses mq_router, grpc_router, cradle_manager optional JSON configs from the /var/th2/config folder
-+ tries to load log4j.properties files from sources in order: '/var/th2/config', '/home/etc', configured path via cmd, default configuration
++ tries to load log4j.properties files from sources in order: '/var/th2/config', '/home/etc', configured path via cmd,
+  default configuration
 + update Cradle version. Introduce async API for storing events
 + removed gRPC event loop handling
 + fixed dictionary reading
