@@ -78,6 +78,7 @@ trim-whitespace: true
 ```
 
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
+  codec-csv trims all values in `default-header` and executes blank check. 
 
 **delimiter** - the delimiter to split values in received data. The default value is `,`.
 
@@ -90,7 +91,7 @@ attached to that root event. The default value for the name is `CodecCsv`.
 
 **publish-header** - set to publish decoded header. The default value is `false`.
 
-**trim-whitespace** - set to trim whitespace in header (when default-header isn't set) and cell. The default value is `true`.
+**trim-whitespace** - set to trim whitespace in header and cell. The default value is `true`.
 
 ## Full configuration example
 
