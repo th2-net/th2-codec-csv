@@ -28,6 +28,7 @@ import io.netty.buffer.Unpooled
 import org.apache.commons.lang3.StringUtils
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.lang.String.join
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 
@@ -57,11 +58,7 @@ class TestCsvCodecTransport {
     }
 
     private fun createCsvMessage(vararg data: String): RawMessage {
-        return createCsvMessage(java.util.Map.of(), *data)
-    }
-
-    private fun createCsvMessage(metadataProps: Map<String, String> = mapOf(), vararg data: String): RawMessage {
-        val body = java.lang.String.join(StringUtils.LF, *data).toByteArray(StandardCharsets.UTF_8)
+        val body = join(StringUtils.LF, *data).toByteArray(StandardCharsets.UTF_8)
         return RawMessage(
             id = MessageId(
                 "alias_01",
@@ -69,7 +66,7 @@ class TestCsvCodecTransport {
                 System.nanoTime(),
                 Instant.now()
             ),
-            metadata = metadataProps,
+            metadata = mapOf(),
             body = Unpooled.wrappedBuffer(body)
         )
     }
