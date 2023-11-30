@@ -28,8 +28,16 @@ class TransportDecoder(
     csvDelimiter: Char,
     defaultHeader: Array<String>?,
     publishHeader: Boolean,
-    validateLength: Boolean
-) : AbstractDecoder<Message<*>, RawMessage, ParsedMessage, Any>(charset, csvDelimiter, defaultHeader, publishHeader, validateLength) {
+    validateLength: Boolean,
+    trimWhitespace: Boolean
+) : AbstractDecoder<Message<*>, RawMessage, ParsedMessage, Any>(
+    charset,
+    csvDelimiter,
+    defaultHeader,
+    publishHeader,
+    validateLength,
+    trimWhitespace,
+) {
 
     override val RawMessage.messageMetadata: Map<String, String> get() = this.metadata
     override val RawMessage.messageSessionAlias: String get() = id.sessionAlias

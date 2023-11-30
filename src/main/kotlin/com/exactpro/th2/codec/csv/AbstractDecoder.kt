@@ -29,7 +29,8 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
     private val csvDelimiter: Char,
     private val defaultHeader: Array<String>?,
     private val publishHeader: Boolean,
-    private val validateLength: Boolean
+    private val validateLength: Boolean,
+    private val trimWhitespace: Boolean
 ) {
     protected abstract val RAW_MESSAGE.messageMetadata: Map<String, String>
     protected abstract val RAW_MESSAGE.messageSessionAlias: String
@@ -103,7 +104,9 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
                 errors.add(ErrorHolder("Empty raw at $currentIndex index (starts with 1)", rawMessage))
                 continue
             }
-            trimEachElement(strings)
+            if (trimWhitespace) {
+                trimEachElement(strings)
+            }
             if (header == null) {
                 LOGGER.debug { "Set header to: ${strings.contentToString()}" }
                 header = strings
@@ -121,7 +124,7 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
                 )
                 LOGGER.error(msg)
                 LOGGER.debug { rawMessage.toString() }
-                errors.add(ErrorHolder(msg, rawMessage, strings))
+                errors.add(ErrorHolder(msg, rawMessage))
             }
 
             val headerLength = header.size
@@ -162,6 +165,7 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
         try {
             ByteArrayInputStream(body).use {
                 val reader = CsvReader(it, csvDelimiter, charset)
+                reader.trimWhitespace = trimWhitespace
                 return try {
                     val result: MutableList<Array<String>> = ArrayList()
                     while (reader.readRecord()) {
@@ -179,8 +183,7 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
 
     private class ErrorHolder<T>(
         val text: String,
-        val originalMessage: T,
-        val currentRow: Array<String> = emptyArray()
+        val originalMessage: T
     )
 
     private fun trimEachElement(elements: Array<String>) {

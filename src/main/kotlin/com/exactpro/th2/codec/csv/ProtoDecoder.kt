@@ -35,8 +35,16 @@ class ProtoDecoder(
     csvDelimiter: Char,
     defaultHeader: Array<String>?,
     publishHeader: Boolean,
-    validateLength: Boolean
-) : AbstractDecoder<AnyMessage, RawMessage, RawMessage, Value>(charset, csvDelimiter, defaultHeader, publishHeader, validateLength) {
+    validateLength: Boolean,
+    trimWhitespace: Boolean
+) : AbstractDecoder<AnyMessage, RawMessage, RawMessage, Value>(
+    charset,
+    csvDelimiter,
+    defaultHeader,
+    publishHeader,
+    validateLength,
+    trimWhitespace,
+) {
 
     override val RawMessage.messageMetadata: Map<String, String> get() = metadata.propertiesMap
     override val RawMessage.messageSessionAlias: String get() = sessionAlias ?: error("No session alias in message")

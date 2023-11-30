@@ -32,8 +32,22 @@ class CsvCodec(private val config: CsvCodecConfiguration) : IPipelineCodec {
         LOGGER.info { "Default header: ${config.defaultHeader}" }
     }
 
-    private val protoDecoder = ProtoDecoder(charset, config.delimiter, defaultHeader, config.isPublishHeader, config.validateLength)
-    private val transportDecoder = TransportDecoder(charset, config.delimiter, defaultHeader, config.isPublishHeader, config.validateLength)
+    private val protoDecoder = ProtoDecoder(
+        charset,
+        config.delimiter,
+        defaultHeader,
+        config.isPublishHeader,
+        config.validateLength,
+        config.isTrimWhitespace,
+    )
+    private val transportDecoder = TransportDecoder(
+        charset,
+        config.delimiter,
+        defaultHeader,
+        config.isPublishHeader,
+        config.validateLength,
+        config.isTrimWhitespace,
+    )
 
     override fun decode(messageGroup: ProtoMessageGroup, context: IReportingContext): ProtoMessageGroup {
         val decodedMessages = protoDecoder.decode(messageGroup.messagesList)

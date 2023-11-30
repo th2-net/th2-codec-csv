@@ -1,4 +1,4 @@
-# Csv codec (5.1.0)
+# Csv codec (5.2.0)
 
 ## Description
 
@@ -74,6 +74,7 @@ encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
 publish-header: false
+trim-whitespace: true
 ```
 
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
@@ -88,6 +89,8 @@ attached to that root event. The default value for the name is `CodecCsv`.
 **validate-length** - check if csv have different count of values against header's count.
 
 **publish-header** - set to publish decoded header. The default value is `false`.
+
+**trim-whitespace** - set to trim whitespace in header (when default-header isn't set) and cell. The default value is `true`.
 
 ## Full configuration example
 
@@ -136,6 +139,13 @@ spec:
 ```
 
 ## Release notes
+
+### 5.2.0
+
++ Added `trim-whitespace` option.
++ Updated common:5.7.1-dev
++ Updated common-utils:2.2.2-dev
++ Updated codec:5.4.0-dev
 
 ### 5.1.0
 
