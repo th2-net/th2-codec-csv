@@ -1,4 +1,4 @@
-# Csv codec (5.2.0)
+# Csv codec (5.2.1)
 
 ## Description
 
@@ -140,6 +140,11 @@ spec:
 ```
 
 ## Release notes
+
+### 5.2.1
+
++ Updated common: `5.7.2-dev`
++ Updated codec: `5.4.1-dev`
 
 ### 5.2.0
 
