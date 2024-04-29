@@ -54,6 +54,11 @@ dependencies {
     testImplementation 'io.strikt:strikt-core:0.34.1'
 }
 
+application {
+    applicationName = "service"
+    mainClass.set("com.exactpro.th2.codec.MainKt")
+}
+
 test {
     useJUnitPlatform()
 }
