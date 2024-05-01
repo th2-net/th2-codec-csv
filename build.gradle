@@ -36,7 +36,7 @@ repositories {
 dependencies {
     implementation "com.exactpro.th2:common:5.10.1-dev"
     implementation "com.exactpro.th2:common-utils:2.2.3-dev"
-    implementation "com.exactpro.th2:codec:5.5.0-th2-gradle-plugin-+"
+    implementation "com.exactpro.th2:codec:5.5.0-dev"
 
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
