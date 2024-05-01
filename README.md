@@ -1,4 +1,4 @@
-# Csv codec (5.2.1)
+# Csv codec (5.3.0)
 
 ## Description
 
@@ -140,6 +140,14 @@ spec:
 ```
 
 ## Release notes
+
+### 5.3.0
++ Migrated to th2 gradle plugin: `0.0.6`
++ Updated:
+  + bom `4.6.1`
+  + common: `5.10.1-dev`
+  + common-utils: `2.2.3-dev`
+  + codec: `5.5.0-dev`
 
 ### 5.2.1
 
