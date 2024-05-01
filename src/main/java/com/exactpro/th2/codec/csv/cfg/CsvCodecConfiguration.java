@@ -16,13 +16,13 @@
 
 package com.exactpro.th2.codec.csv.cfg;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import com.exactpro.th2.codec.api.IPipelineCodecSettings;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class CsvCodecConfiguration implements IPipelineCodecSettings {
     @JsonProperty("default-header")
@@ -47,6 +47,10 @@ public class CsvCodecConfiguration implements IPipelineCodecSettings {
     @JsonProperty("publish-header")
     @JsonPropertyDescription("Set to enable header publication")
     private boolean publishHeader = false;
+
+    @JsonProperty("trim-whitespace")
+    @JsonPropertyDescription("Set to trim whitespace in header (when default-header isn't set) and cell")
+    private boolean trimWhitespace = true;
 
     public List<String> getDefaultHeader() {
         return defaultHeader;
@@ -94,5 +98,13 @@ public class CsvCodecConfiguration implements IPipelineCodecSettings {
 
     public void setPublishHeader(boolean publishHeader) {
         this.publishHeader = publishHeader;
+    }
+
+    public boolean isTrimWhitespace() {
+        return trimWhitespace;
+    }
+
+    public void setTrimWhitespace(boolean trimWhitespace) {
+        this.trimWhitespace = trimWhitespace;
     }
 }
