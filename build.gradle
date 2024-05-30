@@ -4,8 +4,8 @@ plugins {
     id("java-library")
     id("maven-publish")
 
-    id "com.exactpro.th2.gradle.publish" version "0.0.7"
-    id "com.exactpro.th2.gradle.component" version "0.0.7"
+    id "com.exactpro.th2.gradle.publish" version "0.0.8"
+    id "com.exactpro.th2.gradle.component" version "0.0.8"
 }
 
 group = 'com.exactpro.th2'
@@ -60,10 +60,6 @@ application {
 
 test {
     useJUnitPlatform()
-}
-
-licenseReport {
-    excludeBoms = true
 }
 
 dependencyCheck {
