@@ -1,4 +1,4 @@
-# Csv codec (5.1.0)
+# Csv codec (5.3.1)
 
 ## Description
 
@@ -53,11 +53,7 @@ into
 {
   "A": 1,
   "B": 2,
-  "V": [
-    3,
-    4,
-    5
-  ],
+  "V": [ 3, 4, 5 ],
   "G": 6,
   "D": 7
 }
@@ -74,9 +70,11 @@ encoding: UTF-8
 display-name: CodecCsv
 validate-length: true
 publish-header: false
+trim-whitespace: true
 ```
 
 **default-header** - the default header for this codec. It will be used if no header found in the received batch.
+  codec-csv trims all values in `default-header` and executes blank check. 
 
 **delimiter** - the delimiter to split values in received data. The default value is `,`.
 
@@ -88,6 +86,8 @@ attached to that root event. The default value for the name is `CodecCsv`.
 **validate-length** - check if csv have different count of values against header's count.
 
 **publish-header** - set to publish decoded header. The default value is `false`.
+
+**trim-whitespace** - set to trim whitespace in header and cell. The default value is `true`.
 
 ## Full configuration example
 
@@ -136,6 +136,29 @@ spec:
 ```
 
 ## Release notes
+
+### 5.3.1
++ Migrated to th2 gradle plugin: `0.0.8`
+
+### 5.3.0
++ Migrated to th2 gradle plugin: `0.0.6`
++ Updated:
+  + bom `4.6.1`
+  + common: `5.10.1-dev`
+  + common-utils: `2.2.3-dev`
+  + codec: `5.5.0-dev`
+
+### 5.2.1
+
++ Updated common: `5.7.2-dev`
++ Updated codec: `5.4.1-dev`
+
+### 5.2.0
+
++ Added `trim-whitespace` option.
++ Updated common:5.7.1-dev
++ Updated common-utils:2.2.2-dev
++ Updated codec:5.4.0-dev
 
 ### 5.1.0
 
