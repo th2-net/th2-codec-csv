@@ -58,10 +58,6 @@ class TestCsvCodecTransport {
     }
 
     private fun createCsvMessage(vararg data: String): RawMessage {
-        return createCsvMessage(java.util.Map.of(), *data)
-    }
-
-    private fun createCsvMessage(metadataProps: Map<String, String> = mapOf(), vararg data: String): RawMessage {
         val body = join(StringUtils.LF, *data).toByteArray(StandardCharsets.UTF_8)
         return RawMessage(
             id = MessageId(
@@ -70,7 +66,7 @@ class TestCsvCodecTransport {
                 System.nanoTime(),
                 Instant.now()
             ),
-            metadata = metadataProps,
+            metadata = mapOf(),
             body = Unpooled.wrappedBuffer(body)
         )
     }

@@ -1,4 +1,4 @@
-# Csv codec (5.3.1)
+# Csv codec (5.3.2)
 
 ## Description
 
@@ -136,6 +136,11 @@ spec:
 ```
 
 ## Release notes
+
+### 5.3.2
++ Migrated to th2 gradle plugin: `0.1.1`
++ Updated common: `5.14.0-dev`
++ Updated kotlin-logging: `5.1.4`
 
 ### 5.3.1
 + Migrated to th2 gradle plugin: `0.0.8`

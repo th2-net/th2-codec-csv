@@ -1,19 +1,13 @@
 plugins {
     id "org.jetbrains.kotlin.jvm" version "1.8.22"
     id "org.jetbrains.kotlin.kapt" version "1.8.22"
-    id("java-library")
-    id("maven-publish")
-
-    id "com.exactpro.th2.gradle.publish" version "0.0.8"
-    id "com.exactpro.th2.gradle.component" version "0.0.8"
+    id "com.exactpro.th2.gradle.component" version "0.1.1"
 }
 
 group = 'com.exactpro.th2'
 version = release_version
 
-kotlin {
-    jvmToolchain(11)
-}
+kotlin.jvmToolchain(11)
 
 repositories {
     mavenCentral()
@@ -34,34 +28,22 @@ repositories {
 }
 
 dependencies {
-    implementation "com.exactpro.th2:common:5.10.1-dev"
+    implementation "com.exactpro.th2:common:5.14.0-dev"
     implementation "com.exactpro.th2:common-utils:2.2.3-dev"
     implementation "com.exactpro.th2:codec:5.5.0-dev"
 
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
-
     implementation "net.sourceforge.javacsv:javacsv:2.0"
-
-    implementation "io.github.microutils:kotlin-logging:3.0.5"
+    implementation "io.github.oshai:kotlin-logging:5.1.4"
 
     compileOnly "com.google.auto.service:auto-service-annotations:1.1.1"
     kapt "com.google.auto.service:auto-service:1.1.1"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
-    testImplementation 'org.mockito.kotlin:mockito-kotlin:5.3.1'
-    testImplementation 'io.strikt:strikt-core:0.34.1'
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.3"
 }
 
-application {
-    mainClass.set("com.exactpro.th2.codec.MainKt")
-}
-
-test {
-    useJUnitPlatform()
-}
-
-dependencyCheck {
-    suppressionFile='supressions.xml'
-}
+application.mainClass = "com.exactpro.th2.codec.MainKt"
+test.useJUnitPlatform()
+dependencyCheck.suppressionFile = "supressions.xml"
