@@ -1,4 +1,4 @@
-# Csv codec (5.3.1)
+# Csv codec (5.4.0)
 
 ## Description
 
@@ -53,11 +53,7 @@ into
 {
   "A": 1,
   "B": 2,
-  "V": [
-    3,
-    4,
-    5
-  ],
+  "V": [ 3, 4, 5 ],
   "G": 6,
   "D": 7
 }
@@ -140,6 +136,11 @@ spec:
 ```
 
 ## Release notes
+
+### 5.4.0
++ Migrated to th2 gradle plugin: `0.1.1`
++ Updated common: `5.14.0-dev`
++ Updated kotlin-logging: `5.1.4`
 
 ### 5.3.1
 + Migrated to th2 gradle plugin: `0.0.8`

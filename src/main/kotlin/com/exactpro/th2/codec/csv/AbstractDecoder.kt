@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2023-2024 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.exactpro.th2.codec.csv
 
 import com.csvreader.CsvReader
 import com.exactpro.th2.codec.DecodeException
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.nio.charset.Charset
@@ -111,9 +111,9 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
                 LOGGER.debug { "Set header to: ${strings.contentToString()}" }
                 header = strings
                 if (publishHeader) {
-                    //groupBuilder += createHeadersMessage(rawMessage, strings, currentIndex)
-                    groupBuilder += createParsedMessage(rawMessage,
-                        HEADER_MSG_TYPE, mapOf(HEADER_FIELD_NAME to strings.toFieldValue()), currentIndex)
+                    groupBuilder += createParsedMessage(
+                        rawMessage, HEADER_MSG_TYPE, mapOf(HEADER_FIELD_NAME to strings.toFieldValue()), currentIndex
+                    )
                 }
                 continue
             }
@@ -122,7 +122,7 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
                     "Wrong fields count in message. Expected count: %d; actual: %d; session alias: %s",
                     header.size, strings.size, rawMessage.messageSessionAlias
                 )
-                LOGGER.error(msg)
+                LOGGER.error { msg }
                 LOGGER.debug { rawMessage.toString() }
                 errors.add(ErrorHolder(msg, rawMessage))
             }
