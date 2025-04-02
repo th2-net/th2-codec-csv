@@ -1,22 +1,16 @@
 plugins {
-    id "org.jetbrains.kotlin.jvm" version "1.8.22"
-    id "org.jetbrains.kotlin.kapt" version "1.8.22"
-    id "maven-publish"
-    id "com.exactpro.th2.gradle.publish" version "0.1.1"
-    id "com.exactpro.th2.gradle.component" version "0.1.1"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.kapt)
+    id("maven-publish")
+    alias(libs.plugins.th2.publish)
+    alias(libs.plugins.th2.component)
 }
 
 group = 'com.exactpro.th2'
 version = release_version
 
-kotlin.jvmToolchain(11)
-
 repositories {
     mavenCentral()
-    maven {
-        name 'Sonatype_snapshots'
-        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-    }
     maven {
         name 'Sonatype_releases'
         url 'https://s01.oss.sonatype.org/content/repositories/releases/'
@@ -30,22 +24,27 @@ repositories {
 }
 
 dependencies {
-    implementation "com.exactpro.th2:common:5.14.0-dev"
-    implementation "com.exactpro.th2:common-utils:2.2.3-dev"
-    implementation "com.exactpro.th2:codec:5.5.0-dev"
+    implementation(libs.th2.common)
+    implementation(libs.th2.common.utils)
+    implementation(libs.th2.codec)
 
     implementation "org.apache.commons:commons-lang3"
     implementation "com.fasterxml.jackson.core:jackson-databind"
-    implementation "net.sourceforge.javacsv:javacsv:2.0"
-    implementation "io.github.oshai:kotlin-logging:5.1.4"
+    implementation(libs.javacsv)
 
-    compileOnly "com.google.auto.service:auto-service-annotations:1.1.1"
-    kapt "com.google.auto.service:auto-service:1.1.1"
+    implementation(libs.kotlin.logging)
 
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit"
-    testImplementation "org.junit.jupiter:junit-jupiter:5.10.3"
+    compileOnly(libs.auto.service)
+    kapt(libs.auto.service)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.platform:junit-platform-launcher") {
+        because 'This artifact will not be added automatically since gradle 9.0. You can read more information here:' +
+                'https://docs.gradle.org/8.3/userguide/upgrading_version_8.html#test_framework_implementation_dependencies'
+    }
 }
 
 application.mainClass = "com.exactpro.th2.codec.MainKt"
 test.useJUnitPlatform()
-dependencyCheck.suppressionFile = "supressions.xml"
+dependencyCheck.suppressionFile = "suppressions.xml"

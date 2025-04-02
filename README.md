@@ -1,4 +1,4 @@
-# Csv codec (5.4.0)
+# Csv codec (5.5.0)
 
 ## Description
 
@@ -92,50 +92,72 @@ attached to that root event. The default value for the name is `CodecCsv`.
 ## Full configuration example
 
 ```yaml
-apiVersion: th2.exactpro.com/v1
+apiVersion: th2.exactpro.com/v2
 kind: Th2Box
 metadata:
   name: codec-csv
 spec:
-  image-name: ghcr.io/th2-net/th2-codec-csv
-  image-version: 4.0.0
-  custom-config:
+  imageName: ghcr.io/th2-net/th2-codec-csv
+  imageVersion: 4.0.0
+  customConfig:
+    transportLines:
+      general:
+        type: TH2_TRANSPORT
+        useParentEventId: true
+      lw:
+        type: TH2_TRANSPORT
+        useParentEventId: false
+      rpt:
+        type: TH2_TRANSPORT
+        useParentEventId: false
     codecSettings:
       default-header: [ A, B, C ]
       delimiter: ','
       encoding: UTF-8
   pins:
-    # encoder
-    - name: in_codec_encode
-      connection-type: mq
-      attributes: [ 'encoder_in', 'parsed', 'subscribe' ]
-    - name: out_codec_encode
-      connection-type: mq
-      attributes: [ 'encoder_out', 'raw', 'publish' ]
-    # decoder
-    - name: in_codec_decode
-      connection-type: mq
-      attributes: [ 'decoder_in', 'raw', 'subscribe' ]
-    - name: out_codec_decode
-      connection-type: mq
-      attributes: [ 'decoder_out', 'parsed', 'publish' ]
-    # encoder general (technical)
-    - name: in_codec_general_encode
-      connection-type: mq
-      attributes: [ 'general_encoder_in', 'parsed', 'subscribe' ]
-    - name: out_codec_general_encode
-      connection-type: mq
-      attributes: [ 'general_encoder_out', 'raw', 'publish' ]
-    # decoder general (technical)
-    - name: in_codec_general_decode
-      connection-type: mq
-      attributes: [ 'general_decoder_in', 'raw', 'subscribe' ]
-    - name: out_codec_general_decode
-      connection-type: mq
-      attributes: [ 'general_decoder_out', 'parsed', 'publish' ]
+    mq:
+      subscribers:
+        - name: in_codec_general_decode
+          attributes: [general_decoder_in, transport-group, subscribe]
+        - name: in_codec_general_encode
+          attributes: [general_encoder_in, transport-group, subscribe]
+
+        - name: in_codec_lw_decode
+          attributes: [lw_decoder_in, transport-group, subscribe]
+        - name: in_codec_lw_encode
+          attributes: [lw_encoder_in, transport-group, subscribe]
+          
+        - name: in_codec_rpt_decode
+          attributes: [rpt_decoder_in, transport-group, subscribe]
+        - name: in_codec_rpt_encode
+          attributes: [rpt_encoder_in, transport-group, subscribe]
+      publishers:
+        - name: out_codec_general_decode
+          attributes: [general_decoder_out, transport-group, publish]
+        - name: out_codec_general_encode
+          attributes: [general_encoder_out, transport-group, publish]
+
+        - name: out_codec_lw_decode
+          attributes: [lw_decoder_out, transport-group, publish]
+        - name: out_codec_lw_encode
+          attributes: [lw_encoder_out, transport-group, publish]
+          
+        - name: out_codec_rpt_decode
+          attributes: [rpt_decoder_out, transport-group, publish]
+        - name: out_codec_rpt_encode
+          attributes: [rpt_encoder_out, transport-group, publish]
 ```
 
 ## Release notes
+
+### 5.5.0
++ Updated:
+  + th2-common: `2.15.0-dev`
+  + th2-common-utils: `2.3.1-dev`
+  + kotlin-logging: `7.0.6`
++ Updated gradle plugins:
+  + th2 gradle plugin: `0.2.4` (bom: `4.11.0`)
+  + kotlin: `2.1.20`
 
 ### 5.4.0
 + Migrated to th2 gradle plugin: `0.1.1`

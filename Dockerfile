@@ -1,4 +1,4 @@
-FROM gradle:8.7-jdk11 AS build
+FROM gradle:8.11.1-jdk21 AS build
 ARG release_version
 COPY ./ .
 RUN gradle build dockerPrepare \
