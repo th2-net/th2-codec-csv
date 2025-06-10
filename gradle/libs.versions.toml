@@ -12,7 +12,7 @@ javacsv = { group = "net.sourceforge.javacsv", name = "javacsv", version = "2.0"
 kotlin-logging = { group = "io.github.oshai", name = "kotlin-logging", version = "7.0.7" }
 auto-service = { group = "com.google.auto.service", name = "auto-service", version = "1.1.1" }
 
-junit-bom = { group = "org.junit", name = "junit-bom", version = "5.13.0" }
+junit-bom = { group = "org.junit", name = "junit-bom", version = "5.13.1" }
 
 [plugins]
 th2-publish = { id = "com.exactpro.th2.gradle.publish", version.ref = "th2-plugin" }
