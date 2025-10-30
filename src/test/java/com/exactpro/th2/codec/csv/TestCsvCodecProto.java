@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2020-2025 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class TestCsvCodec {
+class TestCsvCodecProto {
     private final IReportingContext reportingContext = new ReportingContext();
     private static final String TEST_SESSION = "test-session";
 
@@ -84,6 +84,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> {
@@ -129,6 +130,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -170,6 +172,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> {
@@ -213,6 +216,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -243,6 +247,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -277,6 +282,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals(customType, message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -314,6 +320,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -344,6 +351,7 @@ class TestCsvCodec {
                             assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                             assertEquals(1, message.getMetadata().getId().getSubsequence(0));
                             assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                            assertEquals("csv", message.getMetadata().getProtocol());
                         },
                         () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                         () -> assertEquals("2", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -383,6 +391,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("\"value\"", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -425,6 +434,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1,2", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("3", getFieldValue(message, "B", () -> "No field B. " + message))
@@ -467,6 +477,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1", getFieldValue(message, "A", () -> "No field A. " + message)),
                                 () -> assertEquals("", getFieldValue(message, "B", () -> "No field B. " + message)),
@@ -510,6 +521,7 @@ class TestCsvCodec {
                                     assertEquals(1, message.getMetadata().getId().getSubsequenceCount());
                                     assertEquals(2, message.getMetadata().getId().getSubsequence(0));
                                     assertEquals("Csv_Message", message.getMetadata().getMessageType());
+                                    assertEquals("csv", message.getMetadata().getProtocol());
                                 },
                                 () -> assertEquals("1 ", getFieldValue(message, "A ", () -> "No field A. " + message)),
                                 () -> assertEquals(" ", getFieldValue(message, " B ", () -> "No field B. " + message)),

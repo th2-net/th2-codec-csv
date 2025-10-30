@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2023-2025 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@ package com.exactpro.th2.codec.csv
 import com.exactpro.th2.codec.api.IReportingContext
 import com.exactpro.th2.codec.api.impl.ReportingContext
 import com.exactpro.th2.codec.csv.cfg.CsvCodecConfiguration
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Direction
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageGroup
+import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.ParsedMessage
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
-import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Direction
 import io.netty.buffer.Unpooled
 import org.apache.commons.lang3.StringUtils
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.lang.String.join
 import java.nio.charset.StandardCharsets
@@ -43,20 +43,22 @@ class TestCsvCodecTransport {
         val group = MessageGroup(listOf(createCsvMessage("1,2,3")))
         val decodedGroup = codec.decode(group,reportingContext)
 
-        Assertions.assertEquals(1, decodedGroup.messages.size)
+        assertEquals(1, decodedGroup.messages.size)
         val message = decodedGroup.messages[0] as ParsedMessage
 
         message.body.size
 
-        Assertions.assertEquals(3, message.body.size)
-        Assertions.assertEquals(1, message.id.subsequence.size)
-        Assertions.assertEquals(1, message.id.subsequence[0])
-        Assertions.assertEquals("Csv_Message", message.type)
-        Assertions.assertEquals("1", message.body["A"])
-        Assertions.assertEquals("2", message.body["B"])
-        Assertions.assertEquals("3", message.body["C"])
+        assertEquals(3, message.body.size)
+        assertEquals(1, message.id.subsequence.size)
+        assertEquals(1, message.id.subsequence[0])
+        assertEquals("csv", message.protocol)
+        assertEquals("Csv_Message", message.type)
+        assertEquals("1", message.body["A"])
+        assertEquals("2", message.body["B"])
+        assertEquals("3", message.body["C"])
     }
 
+    @Suppress("SameParameterValue")
     private fun createCsvMessage(vararg data: String): RawMessage {
         val body = join(StringUtils.LF, *data).toByteArray(StandardCharsets.UTF_8)
         return RawMessage(

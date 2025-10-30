@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2023-2025 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.csv
 
+import com.exactpro.th2.codec.csv.CodecFactory.PROTOCOL
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.AnyMessage
 import com.exactpro.th2.common.grpc.RawMessage
@@ -37,7 +38,7 @@ class ProtoDecoder(
     publishHeader: Boolean,
     validateLength: Boolean,
     trimWhitespace: Boolean
-) : AbstractDecoder<AnyMessage, RawMessage, RawMessage, Value>(
+) : AbstractDecoder<AnyMessage, RawMessage, Value>(
     charset,
     csvDelimiter,
     defaultHeader,
@@ -84,6 +85,7 @@ class ProtoDecoder(
                         .addSubsequence(currentIndex)
                         .build()
                 )
+                .setProtocol(PROTOCOL)
                 .putAllProperties(originalMetadata.propertiesMap)
                 .setMessageType(messageType)
         )
