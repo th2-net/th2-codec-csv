@@ -1,4 +1,4 @@
-# Csv codec (5.5.0)
+# Csv codec (5.4.1)
 
 ## Description
 
@@ -150,14 +150,16 @@ spec:
 
 ## Release notes
 
-### 5.5.0
+### 5.4.1
++ Fixed: [[GH-73] set `csv` protocol during decode](https://github.com/th2-net/th2-codec-csv/issues/73) 
 + Updated:
-  + th2-common: `2.15.0-dev`
-  + th2-common-utils: `2.3.1-dev`
-  + kotlin-logging: `7.0.6`
+  + th2-common: `2.16.0-dev`
+  + th2-common-utils: `2.4.0-dev`
+  + codec: `5.6.1-dev`
+  + kotlin-logging: `7.0.13`
 + Updated gradle plugins:
-  + th2 gradle plugin: `0.2.4` (bom: `4.11.0`)
-  + kotlin: `2.1.20`
+  + th2 gradle plugin: `0.3.10` (bom: `4.14.2`)
+  + kotlin: `2.1.21`
 
 ### 5.4.0
 + Migrated to th2 gradle plugin: `0.1.1`

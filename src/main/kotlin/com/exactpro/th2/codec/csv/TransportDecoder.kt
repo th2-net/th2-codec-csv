@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Exactpro (Exactpro Systems Limited)
+ * Copyright 2023-2025 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.exactpro.th2.codec.csv
 
+import com.exactpro.th2.codec.csv.CodecFactory.PROTOCOL
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Message
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.ParsedMessage
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.RawMessage
@@ -30,7 +31,7 @@ class TransportDecoder(
     publishHeader: Boolean,
     validateLength: Boolean,
     trimWhitespace: Boolean
-) : AbstractDecoder<Message<*>, RawMessage, ParsedMessage, Any>(
+) : AbstractDecoder<Message<*>, RawMessage, Any>(
     charset,
     csvDelimiter,
     defaultHeader,
@@ -61,6 +62,7 @@ class TransportDecoder(
             eventId = sourceMessage.eventId,
             type = outputMessageType,
             metadata = sourceMessage.metadata,
+            protocol = PROTOCOL,
             body = body
         )
     }

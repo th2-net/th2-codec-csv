@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Exactpro (Exactpro Systems Limited)
+ * Copyright 2023-2025 Exactpro (Exactpro Systems Limited)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,14 @@ package com.exactpro.th2.codec.csv
 
 import com.csvreader.CsvReader
 import com.exactpro.th2.codec.DecodeException
+import com.exactpro.th2.codec.csv.CodecFactory.PROTOCOL
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.nio.charset.Charset
 import kotlin.math.min
 
-abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FIELD_VALUE>(
+abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, BODY_FIELD_VALUE>(
     private val charset: Charset,
     private val csvDelimiter: Char,
     private val defaultHeader: Array<String>?,
@@ -60,7 +61,7 @@ abstract class AbstractDecoder<ANY_MESSAGE, RAW_MESSAGE, PARSED_MESSAGE, BODY_FI
             }
             val rawMessage = anyMessage.asRaw
             val protocol = rawMessage.messageProtocol
-            if ("" != protocol && !"csv".equals(protocol, ignoreCase = true)) {
+            if ("" != protocol && !PROTOCOL.equals(protocol, ignoreCase = true)) {
                 LOGGER.error { "Wrong protocol: message should have empty or 'csv' protocol but has $protocol" }
                 continue
             }
