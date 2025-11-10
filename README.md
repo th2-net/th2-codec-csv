@@ -1,4 +1,4 @@
-# Csv codec (5.4.1)
+# Csv codec (5.4.2)
 
 ## Description
 
@@ -149,6 +149,11 @@ spec:
 ```
 
 ## Release notes
+
+### 5.4.2
+
++ Produce multi-platform docker image
+  + migrated to [amazoncorretto:11-alpine-jdk](https://hub.docker.com/layers/library/amazoncorretto/11-alpine-jdk) docker image as base
 
 ### 5.4.1
 + Fixed: [[GH-73] set `csv` protocol during decode](https://github.com/th2-net/th2-codec-csv/issues/73) 
