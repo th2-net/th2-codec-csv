@@ -8,12 +8,12 @@ jobs:
     if: github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.sha }}
       # All the below is required because the repository with the action is private
       - name: Checkout tool
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: th2-net/ci-github-action
           ref: master
