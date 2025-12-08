@@ -3,7 +3,7 @@ kotlin = "2.2.21"
 th2-plugin = "0.3.10"
 
 [libraries]
-th2-common = { group = "com.exactpro.th2", name = "common", version = "5.16.0-dev" }
+th2-common = { group = "com.exactpro.th2", name = "common", version = "5.17.0-dev" }
 th2-common-utils = { group = "com.exactpro.th2", name = "common-utils", version = "2.4.0-dev" }
 th2-codec = { group = "com.exactpro.th2", name = "codec", version = "5.6.1-dev" }
 
