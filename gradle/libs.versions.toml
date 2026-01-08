@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.3.0"
-th2-plugin = "0.3.11"
+th2-plugin = "0.3.13"
 
 [libraries]
 th2-common-utils = { group = "com.exactpro.th2", name = "common-utils", version = "2.4.0-dev" }
